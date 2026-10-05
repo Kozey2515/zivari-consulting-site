@@ -1,0 +1,21 @@
+const express=require("express"),path=require("path"),fs=require("fs"),bcrypt=require("bcryptjs"),Database=require("better-sqlite3"),session=require("cookie-session"),helmet=require("helmet"),rateLimit=require("express-rate-limit");
+const app=express(),PORT=process.env.PORT||3000,ROOT=__dirname,DATA=path.join(ROOT,"data");
+if(!fs.existsSync(DATA))fs.mkdirSync(DATA,{recursive:true});
+const db=new Database(path.join(DATA,"zivari.db"));db.pragma("journal_mode=WAL");
+db.exec(`CREATE TABLE IF NOT EXISTS requests(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT NOT NULL,grade TEXT,service TEXT,message TEXT,status TEXT NOT NULL DEFAULT 'new',created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')));`);
+const adminPassword=process.env.ADMIN_PASSWORD||"CHANGE_ME",hash=bcrypt.hashSync(adminPassword,12);
+app.use(helmet({contentSecurityPolicy:false}));app.use(express.json({limit:"100kb"}));app.use(express.urlencoded({extended:true}));
+app.use(session({name:"zivari_session",keys:[process.env.SESSION_SECRET||"CHANGE_SECRET"],httpOnly:true,sameSite:"lax",secure:process.env.NODE_ENV==="production",maxAge:28800000}));
+const limiter=rateLimit({windowMs:900000,limit:60,standardHeaders:true,legacyHeaders:false}),loginLimiter=rateLimit({windowMs:900000,limit:10,standardHeaders:true,legacyHeaders:false});
+app.use("/api",limiter);
+function admin(req,res,next){if(req.session?.admin)return next();res.status(401).json({error:"UNAUTHORIZED"});}
+app.post("/api/requests",(req,res)=>{let{name,phone,grade,service,message}=req.body||{};if(!name||!phone)return res.status(400).json({error:"نام و شماره تماس الزامی است."});if(String(name).length>120||String(phone).length>40||String(message||"").length>3000)return res.status(400).json({error:"اطلاعات واردشده بیش از حد مجاز است."});let r=db.prepare("INSERT INTO requests(name,phone,grade,service,message) VALUES(?,?,?,?,?)").run(String(name).trim(),String(phone).trim(),String(grade||"").trim(),String(service||"").trim(),String(message||"").trim());res.json({ok:true,id:r.lastInsertRowid,message:"درخواست شما با موفقیت ثبت شد."});});
+app.post("/api/admin/login",loginLimiter,async(req,res)=>{if(adminPassword==="CHANGE_ME")return res.status(503).json({error:"ADMIN_PASSWORD را در .env تنظیم کنید."});if(!await bcrypt.compare(String(req.body?.password||""),hash))return res.status(401).json({error:"رمز عبور نادرست است."});req.session.admin=true;res.json({ok:true});});
+app.post("/api/admin/logout",(req,res)=>{req.session=null;res.json({ok:true});});
+app.get("/api/admin/me",(req,res)=>res.json({authenticated:!!req.session?.admin}));
+app.get("/api/admin/requests",admin,(req,res)=>res.json(db.prepare("SELECT * FROM requests ORDER BY id DESC").all()));
+app.patch("/api/admin/requests/:id",admin,(req,res)=>{const ok=["new","contacted","done","cancelled"];if(!ok.includes(req.body?.status))return res.status(400).json({error:"وضعیت نامعتبر است."});let r=db.prepare("UPDATE requests SET status=? WHERE id=?").run(req.body.status,Number(req.params.id));res.json({ok:!!r.changes});});
+app.delete("/api/admin/requests/:id",admin,(req,res)=>{let r=db.prepare("DELETE FROM requests WHERE id=?").run(Number(req.params.id));res.json({ok:!!r.changes});});
+app.get("/api/contact-config",(req,res)=>res.json({whatsapp:process.env.WHATSAPP_NUMBER||"989219004975",bale:process.env.BALE_USERNAME||"H0zeyf"}));
+app.use(express.static(path.join(ROOT,"public")));app.get("*",(req,res)=>res.sendFile(path.join(ROOT,"public","index.html")));
+app.listen(PORT,()=>console.log("Zivari site: http://localhost:"+PORT));
