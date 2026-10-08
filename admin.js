@@ -10,16 +10,14 @@ async function check() {
     if (x.authenticated) {
       L.hidden = true;
       P.hidden = false;
-      load();
+      await load();
     }
   } catch (e) {
     console.error(e);
   }
 }
 
-check();
-
-document.getElementById("lf").onsubmit = async function(e) {
+document.getElementById("lf").addEventListener("submit", async function (e) {
   e.preventDefault();
 
   const password = document.getElementById("pw").value;
@@ -33,6 +31,7 @@ document.getElementById("lf").onsubmit = async function(e) {
       headers: {
         "Content-Type": "application/json"
       },
+      credentials: "same-origin",
       body: JSON.stringify({
         password: password
       })
@@ -45,126 +44,145 @@ document.getElementById("lf").onsubmit = async function(e) {
       return;
     }
 
-    window.location.assign("/admin.html");
+    status.textContent = "ورود موفق بود. در حال انتقال...";
+
+    window.location.href = "/admin.html";
 
   } catch (error) {
     console.error(error);
     status.textContent = "ارتباط با سرور برقرار نشد.";
   }
-};
+});
 
-  const password = document.getElementById("pw").value;
-  const status = document.getElementById("ls");
-
-  status.textContent = "در حال ورود...";
-
+document.getElementById("out").addEventListener("click", async function () {
   try {
-    const r = await fetch("/api/admin/login", {
+    await fetch("/api/admin/logout", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ password })
+      credentials: "same-origin"
+    });
+  } finally {
+    window.location.href = "/admin.html";
+  }
+});
+
+document.getElementById("ref").addEventListener("click", load);
+
+async function load() {
+  try {
+    const r = await fetch("/api/admin/requests", {
+      credentials: "same-origin"
     });
 
-    const x = await r.json();
-
-    if (!r.ok) {
-      status.textContent = x.error || "ورود ناموفق بود.";
+    if (r.status === 401) {
+      L.hidden = false;
+      P.hidden = true;
       return;
     }
 
-    window.location.href = "/admin.html";
-  } catch (err) {
-    status.textContent = "ارتباط با سرور برقرار نشد.";
+    if (!r.ok) {
+      T.innerHTML = "<p>خطا در دریافت درخواست‌ها.</p>";
+      return;
+    }
+
+    const a = await r.json();
+
+    if (!a.length) {
+      T.innerHTML = "<p>هنوز درخواستی ثبت نشده است.</p>";
+      return;
+    }
+
+    T.innerHTML =
+      "<table><thead><tr>" +
+      "<th>کد</th>" +
+      "<th>نام</th>" +
+      "<th>تماس</th>" +
+      "<th>پایه</th>" +
+      "<th>خدمت</th>" +
+      "<th>توضیحات</th>" +
+      "<th>وضعیت</th>" +
+      "<th>تاریخ</th>" +
+      "<th></th>" +
+      "</tr></thead><tbody>" +
+
+      a.map(x => `
+        <tr>
+          <td>${esc(x.id)}</td>
+          <td>${esc(x.name)}</td>
+          <td>${esc(x.phone)}</td>
+          <td>${esc(x.grade || "-")}</td>
+          <td>${esc(x.service || "-")}</td>
+          <td>${esc(x.message || "-")}</td>
+          <td>
+            <select class="status" onchange="st(${x.id}, this.value)">
+              <option value="new" ${x.status === "new" ? "selected" : ""}>جدید</option>
+              <option value="contacted" ${x.status === "contacted" ? "selected" : ""}>تماس گرفته شد</option>
+              <option value="done" ${x.status === "done" ? "selected" : ""}>انجام شد</option>
+              <option value="cancelled" ${x.status === "cancelled" ? "selected" : ""}>لغو شد</option>
+            </select>
+          </td>
+          <td>${esc(x.created_at)}</td>
+          <td>
+            <button class="danger" onclick="del(${x.id})">حذف</button>
+          </td>
+        </tr>
+      `).join("") +
+
+      "</tbody></table>";
+
+  } catch (error) {
+    console.error(error);
+    T.innerHTML = "<p>خطا در ارتباط با سرور.</p>";
   }
-};
-
-document.getElementById("out").onclick = async () => {
-  await fetch("/api/admin/logout", {
-    method: "POST"
-  });
-
-  location.reload();
-};
-
-document.getElementById("ref").onclick = load;
-
-async function load() {
-  const r = await fetch("/api/admin/requests");
-
-  if (r.status === 401) {
-    location.reload();
-    return;
-  }
-
-  const a = await r.json();
-
-  if (!a.length) {
-    T.innerHTML = "<p>هنوز درخواستی ثبت نشده است.</p>";
-    return;
-  }
-
-  T.innerHTML =
-    "<table><thead><tr>" +
-    "<th>کد</th><th>نام</th><th>تماس</th><th>پایه</th>" +
-    "<th>خدمت</th><th>توضیحات</th><th>وضعیت</th><th>تاریخ</th><th></th>" +
-    "</tr></thead><tbody>" +
-
-    a.map(x =>
-      `<tr>
-        <td>${esc(x.id)}</td>
-        <td>${esc(x.name)}</td>
-        <td>${esc(x.phone)}</td>
-        <td>${esc(x.grade || "-")}</td>
-        <td>${esc(x.service || "-")}</td>
-        <td>${esc(x.message || "-")}</td>
-        <td>
-          <select class="status" onchange="st(${x.id},this.value)">
-            <option value="new" ${x.status === "new" ? "selected" : ""}>جدید</option>
-            <option value="contacted" ${x.status === "contacted" ? "selected" : ""}>تماس گرفته شد</option>
-            <option value="done" ${x.status === "done" ? "selected" : ""}>انجام شد</option>
-            <option value="cancelled" ${x.status === "cancelled" ? "selected" : ""}>لغو شد</option>
-          </select>
-        </td>
-        <td>${esc(x.created_at)}</td>
-        <td>
-          <button class="danger" onclick="del(${x.id})">حذف</button>
-        </td>
-      </tr>`
-    ).join("") +
-
-    "</tbody></table>";
 }
 
 async function st(id, status) {
-  await fetch("/api/admin/requests/" + id, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ status })
-  });
+  try {
+    await fetch("/api/admin/requests/" + id, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "same-origin",
+      body: JSON.stringify({
+        status: status
+      })
+    });
 
-  load();
+    await load();
+
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 async function del(id) {
-  if (!confirm("حذف شود؟")) return;
+  if (!confirm("آیا از حذف این درخواست مطمئن هستید؟")) {
+    return;
+  }
 
-  await fetch("/api/admin/requests/" + id, {
-    method: "DELETE"
-  });
+  try {
+    await fetch("/api/admin/requests/" + id, {
+      method: "DELETE",
+      credentials: "same-origin"
+    });
 
-  load();
+    await load();
+
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function esc(v) {
-  return String(v).replace(/[&<>"']/g, m => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  }[m]));
+  return String(v).replace(/[&<>"']/g, function (m) {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[m];
+  });
 }
+
+check();
