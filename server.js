@@ -36,15 +36,9 @@ db.exec(`
   );
 `);
 
-const adminPassword = process.env.ADMIN_PASSWORD;
+const adminPassword = process.env.ADMIN_PASSWORD || "CHANGE_ME";
 
-if (!adminPassword) {
-  console.error("ADMIN_PASSWORD is not configured.");
-}
-
-const hashPromise = adminPassword
-  ? bcrypt.hash(adminPassword, 12)
-  : Promise.resolve(null);
+const adminHash = bcrypt.hashSync(adminPassword, 12);
 
 app.use(
   helmet({
@@ -67,10 +61,12 @@ app.use(
 app.use(
   session({
     name: "zivari_session",
-    keys: [process.env.SESSION_SECRET || "CHANGE_SECRET"],
+    keys: [
+      process.env.SESSION_SECRET || "CHANGE_SECRET"
+    ],
     httpOnly: true,
     sameSite: "lax",
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     maxAge: 8 * 60 * 60 * 1000
   })
 );
@@ -102,7 +98,6 @@ function admin(req, res, next) {
 }
 
 /* ثبت درخواست مشاوره */
-
 app.post("/api/requests", (req, res) => {
   const {
     name,
@@ -150,15 +145,14 @@ app.post("/api/requests", (req, res) => {
 });
 
 /* ورود مدیر */
-
 app.post(
   "/api/admin/login",
   loginLimiter,
   async (req, res) => {
     try {
-      if (!adminPassword) {
+      if (adminPassword === "CHANGE_ME") {
         return res.status(503).json({
-          error: "ADMIN_PASSWORD تنظیم نشده است."
+          error: "ADMIN_PASSWORD را در Environment Variables تنظیم کنید."
         });
       }
 
@@ -166,11 +160,9 @@ app.post(
         req.body?.password || ""
       );
 
-      const hash = await hashPromise;
-
       const valid = await bcrypt.compare(
         password,
-        hash
+        adminHash
       );
 
       if (!valid) {
@@ -197,7 +189,6 @@ app.post(
 );
 
 /* خروج مدیر */
-
 app.post("/api/admin/logout", (req, res) => {
   req.session = null;
 
@@ -207,7 +198,6 @@ app.post("/api/admin/logout", (req, res) => {
 });
 
 /* بررسی وضعیت ورود */
-
 app.get("/api/admin/me", (req, res) => {
   return res.json({
     authenticated:
@@ -216,7 +206,6 @@ app.get("/api/admin/me", (req, res) => {
 });
 
 /* دریافت درخواست‌ها */
-
 app.get(
   "/api/admin/requests",
   admin,
@@ -243,7 +232,6 @@ app.get(
 );
 
 /* تغییر وضعیت درخواست */
-
 app.patch(
   "/api/admin/requests/:id",
   admin,
@@ -291,7 +279,6 @@ app.patch(
 );
 
 /* حذف درخواست */
-
 app.delete(
   "/api/admin/requests/:id",
   admin,
@@ -318,7 +305,6 @@ app.delete(
 );
 
 /* تنظیمات تماس */
-
 app.get("/api/contact-config", (req, res) => {
   return res.json({
     whatsapp:
@@ -331,28 +317,36 @@ app.get("/api/contact-config", (req, res) => {
   });
 });
 
-/* فایل‌های سایت */
+/*
+  فایل‌های سایت در ریشه پروژه هستند،
+  نه داخل public
+*/
 
 app.use(
-  express.static(
-    path.join(ROOT, "public")
-  )
+  express.static(ROOT)
 );
 
 /* صفحه اصلی */
-
-app.get("*", (req, res) => {
+app.get("/", (req, res) => {
   res.sendFile(
-    path.join(
-      ROOT,
-      "public",
-      "index.html"
-    )
+    path.join(ROOT, "index.html")
+  );
+});
+
+/* پنل مدیریت */
+app.get("/admin", (req, res) => {
+  res.sendFile(
+    path.join(ROOT, "admin.html")
+  );
+});
+
+app.get("/admin.html", (req, res) => {
+  res.sendFile(
+    path.join(ROOT, "admin.html")
   );
 });
 
 /* اجرای سرور */
-
 app.listen(
   PORT,
   "0.0.0.0",
