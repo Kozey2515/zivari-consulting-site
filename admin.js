@@ -12,8 +12,8 @@ const refreshButton = document.getElementById("ref");
 async function checkLogin() {
   try {
     const response = await fetch("/api/admin/me", {
-      method: "GET",
-      credentials: "same-origin"
+      credentials: "same-origin",
+      cache: "no-store"
     });
 
     const result = await response.json();
@@ -22,6 +22,7 @@ async function checkLogin() {
       showPanel();
       await loadRequests();
     }
+
   } catch (error) {
     console.error("CHECK LOGIN ERROR:", error);
   }
@@ -43,7 +44,7 @@ function showLogin() {
 form.addEventListener("submit", async function (event) {
   event.preventDefault();
 
-  const password = passwordInput.value.trim();
+  const password = passwordInput.value;
 
   if (!password) {
     statusText.textContent = "رمز عبور را وارد کنید.";
@@ -51,11 +52,12 @@ form.addEventListener("submit", async function (event) {
   }
 
   statusText.textContent = "در حال ورود...";
-  
+
   try {
     const response = await fetch("/api/admin/login", {
       method: "POST",
       credentials: "same-origin",
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json"
       },
@@ -72,19 +74,42 @@ form.addEventListener("submit", async function (event) {
       return;
     }
 
-    if (result.authenticated !== true) {
+    /*
+      server.js در صورت ورود موفق
+      { ok: true }
+      برمی‌گرداند.
+    */
+
+    if (result.ok !== true) {
       statusText.textContent =
         "ورود تأیید نشد.";
       return;
     }
 
-    statusText.textContent = "ورود موفق بود.";
-
-    showPanel();
+    statusText.textContent =
+      "ورود با موفقیت انجام شد.";
 
     passwordInput.value = "";
 
-    await loadRequests();
+    /*
+      بعد از ورود موفق، وضعیت واقعی Session
+      را از سرور بررسی می‌کنیم.
+    */
+
+    const meResponse = await fetch("/api/admin/me", {
+      credentials: "same-origin",
+      cache: "no-store"
+    });
+
+    const meResult = await meResponse.json();
+
+    if (meResult.authenticated === true) {
+      showPanel();
+      await loadRequests();
+    } else {
+      statusText.textContent =
+        "ورود انجام شد، اما Session ایجاد نشد.";
+    }
 
   } catch (error) {
     console.error("LOGIN ERROR:", error);
@@ -106,20 +131,28 @@ logoutButton.addEventListener("click", async function () {
   }
 
   showLogin();
+
   statusText.textContent = "";
+
   T.innerHTML = "";
 });
 
 
-refreshButton.addEventListener("click", loadRequests);
+refreshButton.addEventListener(
+  "click",
+  loadRequests
+);
 
 
 async function loadRequests() {
   try {
-    const response = await fetch("/api/admin/requests", {
-      method: "GET",
-      credentials: "same-origin"
-    });
+    const response = await fetch(
+      "/api/admin/requests",
+      {
+        credentials: "same-origin",
+        cache: "no-store"
+      }
+    );
 
     if (response.status === 401) {
       showLogin();
@@ -134,7 +167,10 @@ async function loadRequests() {
 
     const requests = await response.json();
 
-    if (!Array.isArray(requests) || requests.length === 0) {
+    if (
+      !Array.isArray(requests) ||
+      requests.length === 0
+    ) {
       T.innerHTML =
         "<p>هنوز درخواستی ثبت نشده است.</p>";
       return;
@@ -162,15 +198,10 @@ async function loadRequests() {
         return `
           <tr>
             <td>${esc(item.id)}</td>
-
             <td>${esc(item.name)}</td>
-
             <td>${esc(item.phone)}</td>
-
             <td>${esc(item.grade || "-")}</td>
-
             <td>${esc(item.service || "-")}</td>
-
             <td>${esc(item.message || "-")}</td>
 
             <td>
@@ -178,6 +209,7 @@ async function loadRequests() {
                 class="status"
                 onchange="updateStatus(${Number(item.id)}, this.value)"
               >
+
                 <option value="new"
                   ${item.status === "new" ? "selected" : ""}>
                   جدید
@@ -197,6 +229,7 @@ async function loadRequests() {
                   ${item.status === "cancelled" ? "selected" : ""}>
                   لغو شد
                 </option>
+
               </select>
             </td>
 
@@ -210,6 +243,7 @@ async function loadRequests() {
                 حذف
               </button>
             </td>
+
           </tr>
         `;
 
@@ -219,7 +253,10 @@ async function loadRequests() {
       "</table>";
 
   } catch (error) {
-    console.error("LOAD REQUESTS ERROR:", error);
+    console.error(
+      "LOAD REQUESTS ERROR:",
+      error
+    );
 
     T.innerHTML =
       "<p>ارتباط با سرور برقرار نشد.</p>";
@@ -256,7 +293,11 @@ async function updateStatus(id, status) {
     await loadRequests();
 
   } catch (error) {
-    console.error("UPDATE STATUS ERROR:", error);
+    console.error(
+      "UPDATE STATUS ERROR:",
+      error
+    );
+
     alert("ارتباط با سرور برقرار نشد.");
   }
 }
@@ -289,7 +330,11 @@ async function deleteRequest(id) {
     await loadRequests();
 
   } catch (error) {
-    console.error("DELETE ERROR:", error);
+    console.error(
+      "DELETE ERROR:",
+      error
+    );
+
     alert("ارتباط با سرور برقرار نشد.");
   }
 }
