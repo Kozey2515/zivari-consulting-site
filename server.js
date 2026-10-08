@@ -15,11 +15,15 @@ const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const DATA = path.join(ROOT, "data");
 
+/* ساخت پوشه data */
 if (!fs.existsSync(DATA)) {
   fs.mkdirSync(DATA, { recursive: true });
 }
 
-const db = new Database(path.join(DATA, "zivari.db"));
+/* دیتابیس */
+const db = new Database(
+  path.join(DATA, "zivari.db")
+);
 
 db.pragma("journal_mode=WAL");
 
@@ -32,45 +36,71 @@ db.exec(`
     service TEXT,
     message TEXT,
     status TEXT NOT NULL DEFAULT 'new',
-    created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+    created_at TEXT NOT NULL
+      DEFAULT (datetime('now','localtime'))
   );
 `);
 
-const adminPassword = process.env.ADMIN_PASSWORD || "CHANGE_ME";
+/* رمز ادمین */
+const adminPassword =
+  process.env.ADMIN_PASSWORD || "";
 
-const adminHash = bcrypt.hashSync(adminPassword, 12);
+if (!adminPassword) {
+  console.error(
+    "ADMIN_PASSWORD is not configured."
+  );
+}
 
+const adminHash = adminPassword
+  ? bcrypt.hashSync(adminPassword, 12)
+  : null;
+
+/* امنیت */
 app.use(
   helmet({
     contentSecurityPolicy: false
   })
 );
 
+/* JSON */
 app.use(
   express.json({
     limit: "100kb"
   })
 );
 
+/* فرم‌ها */
 app.use(
   express.urlencoded({
     extended: true
   })
 );
 
+/*
+  Session
+  برای Bonto secure را false گذاشته‌ایم
+  تا Session بعد از ورود از بین نرود.
+*/
 app.use(
   session({
     name: "zivari_session",
+
     keys: [
-      process.env.SESSION_SECRET || "CHANGE_SECRET"
+      process.env.SESSION_SECRET ||
+      "CHANGE_SECRET"
     ],
+
     httpOnly: true,
+
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+
+    secure: false,
+
     maxAge: 8 * 60 * 60 * 1000
   })
 );
 
+/* محدودیت درخواست‌ها */
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 60,
@@ -87,8 +117,12 @@ const loginLimiter = rateLimit({
 
 app.use("/api", limiter);
 
+/* بررسی دسترسی ادمین */
 function admin(req, res, next) {
-  if (req.session && req.session.admin === true) {
+  if (
+    req.session &&
+    req.session.admin === true
+  ) {
     return next();
   }
 
@@ -97,62 +131,85 @@ function admin(req, res, next) {
   });
 }
 
-/* ثبت درخواست مشاوره */
-app.post("/api/requests", (req, res) => {
-  const {
-    name,
-    phone,
-    grade,
-    service,
-    message
-  } = req.body || {};
+/* =========================================
+   ثبت درخواست مشاوره
+========================================= */
 
-  if (!name || !phone) {
-    return res.status(400).json({
-      error: "نام و شماره تماس الزامی است."
+app.post(
+  "/api/requests",
+  (req, res) => {
+
+    const {
+      name,
+      phone,
+      grade,
+      service,
+      message
+    } = req.body || {};
+
+    if (!name || !phone) {
+      return res.status(400).json({
+        error:
+          "نام و شماره تماس الزامی است."
+      });
+    }
+
+    if (
+      String(name).length > 120 ||
+      String(phone).length > 40 ||
+      String(message || "").length > 3000
+    ) {
+      return res.status(400).json({
+        error:
+          "اطلاعات واردشده بیش از حد مجاز است."
+      });
+    }
+
+    const result = db
+      .prepare(`
+        INSERT INTO requests
+        (
+          name,
+          phone,
+          grade,
+          service,
+          message
+        )
+        VALUES (?, ?, ?, ?, ?)
+      `)
+      .run(
+        String(name).trim(),
+        String(phone).trim(),
+        String(grade || "").trim(),
+        String(service || "").trim(),
+        String(message || "").trim()
+      );
+
+    return res.json({
+      ok: true,
+      id: result.lastInsertRowid,
+      message:
+        "درخواست شما با موفقیت ثبت شد."
     });
   }
+);
 
-  if (
-    String(name).length > 120 ||
-    String(phone).length > 40 ||
-    String(message || "").length > 3000
-  ) {
-    return res.status(400).json({
-      error: "اطلاعات واردشده بیش از حد مجاز است."
-    });
-  }
 
-  const result = db
-    .prepare(`
-      INSERT INTO requests
-      (name, phone, grade, service, message)
-      VALUES (?, ?, ?, ?, ?)
-    `)
-    .run(
-      String(name).trim(),
-      String(phone).trim(),
-      String(grade || "").trim(),
-      String(service || "").trim(),
-      String(message || "").trim()
-    );
+/* =========================================
+   ورود ادمین
+========================================= */
 
-  return res.json({
-    ok: true,
-    id: result.lastInsertRowid,
-    message: "درخواست شما با موفقیت ثبت شد."
-  });
-});
-
-/* ورود مدیر */
 app.post(
   "/api/admin/login",
   loginLimiter,
   async (req, res) => {
+
     try {
-      if (adminPassword === "CHANGE_ME") {
+
+      if (!adminPassword || !adminHash) {
         return res.status(503).json({
-          error: "ADMIN_PASSWORD را در Environment Variables تنظیم کنید."
+          error:
+            "ADMIN_PASSWORD تنظیم نشده است."
         });
       }
 
@@ -160,18 +217,26 @@ app.post(
         req.body?.password || ""
       );
 
-      const valid = await bcrypt.compare(
-        password,
-        adminHash
-      );
+      const valid =
+        await bcrypt.compare(
+          password,
+          adminHash
+        );
 
       if (!valid) {
         return res.status(401).json({
-          error: "رمز عبور نادرست است."
+          error:
+            "رمز عبور نادرست است."
         });
       }
 
-      req.session.admin = true;
+      /*
+        ذخیره Session
+      */
+
+      req.session = {
+        admin: true
+      };
 
       return res.json({
         ok: true,
@@ -179,38 +244,65 @@ app.post(
       });
 
     } catch (error) {
-      console.error("LOGIN ERROR:", error);
+
+      console.error(
+        "LOGIN ERROR:",
+        error
+      );
 
       return res.status(500).json({
-        error: "خطا در ورود به پنل."
+        error:
+          "خطا در ورود به پنل."
       });
     }
   }
 );
 
-/* خروج مدیر */
-app.post("/api/admin/logout", (req, res) => {
-  req.session = null;
 
-  return res.json({
-    ok: true
-  });
-});
+/* =========================================
+   خروج ادمین
+========================================= */
 
-/* بررسی وضعیت ورود */
-app.get("/api/admin/me", (req, res) => {
-  return res.json({
-    authenticated:
-      req.session?.admin === true
-  });
-});
+app.post(
+  "/api/admin/logout",
+  (req, res) => {
 
-/* دریافت درخواست‌ها */
+    req.session = null;
+
+    return res.json({
+      ok: true
+    });
+  }
+);
+
+
+/* =========================================
+   بررسی وضعیت ورود
+========================================= */
+
+app.get(
+  "/api/admin/me",
+  (req, res) => {
+
+    return res.json({
+      authenticated:
+        req.session?.admin === true
+    });
+  }
+);
+
+
+/* =========================================
+   دریافت درخواست‌ها
+========================================= */
+
 app.get(
   "/api/admin/requests",
   admin,
   (req, res) => {
+
     try {
+
       const rows = db
         .prepare(`
           SELECT *
@@ -222,20 +314,30 @@ app.get(
       return res.json(rows);
 
     } catch (error) {
-      console.error("REQUESTS ERROR:", error);
+
+      console.error(
+        "REQUESTS ERROR:",
+        error
+      );
 
       return res.status(500).json({
-        error: "خطا در دریافت درخواست‌ها."
+        error:
+          "خطا در دریافت درخواست‌ها."
       });
     }
   }
 );
 
-/* تغییر وضعیت درخواست */
+
+/* =========================================
+   تغییر وضعیت درخواست
+========================================= */
+
 app.patch(
   "/api/admin/requests/:id",
   admin,
   (req, res) => {
+
     const allowedStatuses = [
       "new",
       "contacted",
@@ -249,15 +351,18 @@ app.patch(
       )
     ) {
       return res.status(400).json({
-        error: "وضعیت نامعتبر است."
+        error:
+          "وضعیت نامعتبر است."
       });
     }
 
-    const id = Number(req.params.id);
+    const id =
+      Number(req.params.id);
 
     if (!Number.isInteger(id)) {
       return res.status(400).json({
-        error: "شناسه نامعتبر است."
+        error:
+          "شناسه نامعتبر است."
       });
     }
 
@@ -278,16 +383,23 @@ app.patch(
   }
 );
 
-/* حذف درخواست */
+
+/* =========================================
+   حذف درخواست
+========================================= */
+
 app.delete(
   "/api/admin/requests/:id",
   admin,
   (req, res) => {
-    const id = Number(req.params.id);
+
+    const id =
+      Number(req.params.id);
 
     if (!Number.isInteger(id)) {
       return res.status(400).json({
-        error: "شناسه نامعتبر است."
+        error:
+          "شناسه نامعتبر است."
       });
     }
 
@@ -304,53 +416,96 @@ app.delete(
   }
 );
 
-/* تنظیمات تماس */
-app.get("/api/contact-config", (req, res) => {
-  return res.json({
-    whatsapp:
-      process.env.WHATSAPP_NUMBER ||
-      "989219004975",
 
-    bale:
-      process.env.BALE_USERNAME ||
-      "H0zeyf"
-  });
-});
+/* =========================================
+   تنظیمات تماس
+========================================= */
 
-/*
-  فایل‌های سایت در ریشه پروژه هستند،
-  نه داخل public
-*/
+app.get(
+  "/api/contact-config",
+  (req, res) => {
+
+    return res.json({
+      whatsapp:
+        process.env.WHATSAPP_NUMBER ||
+        "989219004975",
+
+      bale:
+        process.env.BALE_USERNAME ||
+        "H0zeyf"
+    });
+  }
+);
+
+
+/* =========================================
+   فایل‌های سایت
+   فایل‌ها در ریشه پروژه هستند
+========================================= */
 
 app.use(
   express.static(ROOT)
 );
 
-/* صفحه اصلی */
-app.get("/", (req, res) => {
-  res.sendFile(
-    path.join(ROOT, "index.html")
-  );
-});
 
-/* پنل مدیریت */
-app.get("/admin", (req, res) => {
-  res.sendFile(
-    path.join(ROOT, "admin.html")
-  );
-});
+/* =========================================
+   صفحه اصلی
+========================================= */
 
-app.get("/admin.html", (req, res) => {
-  res.sendFile(
-    path.join(ROOT, "admin.html")
-  );
-});
+app.get(
+  "/",
+  (req, res) => {
 
-/* اجرای سرور */
+    res.sendFile(
+      path.join(
+        ROOT,
+        "index.html"
+      )
+    );
+  }
+);
+
+
+/* =========================================
+   پنل مدیریت
+========================================= */
+
+app.get(
+  "/admin.html",
+  (req, res) => {
+
+    res.sendFile(
+      path.join(
+        ROOT,
+        "admin.html"
+      )
+    );
+  }
+);
+
+app.get(
+  "/admin",
+  (req, res) => {
+
+    res.sendFile(
+      path.join(
+        ROOT,
+        "admin.html"
+      )
+    );
+  }
+);
+
+
+/* =========================================
+   اجرای سرور
+========================================= */
+
 app.listen(
   PORT,
   "0.0.0.0",
   () => {
+
     console.log(
       `Zivari site running on port ${PORT}`
     );
