@@ -19,8 +19,39 @@ async function check() {
 
 check();
 
-document.getElementById("lf").onsubmit = async (e) => {
+document.getElementById("lf").onsubmit = async function(e) {
   e.preventDefault();
+
+  const password = document.getElementById("pw").value;
+  const status = document.getElementById("ls");
+
+  status.textContent = "در حال ورود...";
+
+  try {
+    const response = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        password: password
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      status.textContent = result.error || "ورود ناموفق بود.";
+      return;
+    }
+
+    window.location.assign("/admin.html");
+
+  } catch (error) {
+    console.error(error);
+    status.textContent = "ارتباط با سرور برقرار نشد.";
+  }
+};
 
   const password = document.getElementById("pw").value;
   const status = document.getElementById("ls");
