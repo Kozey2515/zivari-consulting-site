@@ -2,36 +2,63 @@ const L = document.getElementById("login");
 const P = document.getElementById("panel");
 const T = document.getElementById("table");
 
-async function check() {
-  try {
-    const r = await fetch("/api/admin/me");
-    const x = await r.json();
+const form = document.getElementById("lf");
+const passwordInput = document.getElementById("pw");
+const statusText = document.getElementById("ls");
+const logoutButton = document.getElementById("out");
+const refreshButton = document.getElementById("ref");
 
-    if (x.authenticated) {
-      L.hidden = true;
-      P.hidden = false;
-      await load();
+
+async function checkLogin() {
+  try {
+    const response = await fetch("/api/admin/me", {
+      method: "GET",
+      credentials: "same-origin"
+    });
+
+    const result = await response.json();
+
+    if (result.authenticated === true) {
+      showPanel();
+      await loadRequests();
     }
-  } catch (e) {
-    console.error(e);
+  } catch (error) {
+    console.error("CHECK LOGIN ERROR:", error);
   }
 }
 
-document.getElementById("lf").addEventListener("submit", async function (e) {
-  e.preventDefault();
 
-  const password = document.getElementById("pw").value;
-  const status = document.getElementById("ls");
+function showPanel() {
+  L.hidden = true;
+  P.hidden = false;
+}
 
-  status.textContent = "در حال ورود...";
 
+function showLogin() {
+  L.hidden = false;
+  P.hidden = true;
+}
+
+
+form.addEventListener("submit", async function (event) {
+  event.preventDefault();
+
+  const password = passwordInput.value.trim();
+
+  if (!password) {
+    statusText.textContent = "رمز عبور را وارد کنید.";
+    return;
+  }
+
+  statusText.textContent = "در حال ورود...";
+  
   try {
     const response = await fetch("/api/admin/login", {
       method: "POST",
+      credentials: "same-origin",
       headers: {
         "Content-Type": "application/json"
       },
-      credentials: "same-origin",
       body: JSON.stringify({
         password: password
       })
@@ -40,59 +67,83 @@ document.getElementById("lf").addEventListener("submit", async function (e) {
     const result = await response.json();
 
     if (!response.ok) {
-      status.textContent = result.error || "ورود ناموفق بود.";
+      statusText.textContent =
+        result.error || "ورود ناموفق بود.";
       return;
     }
 
-    status.textContent = "ورود موفق بود. در حال انتقال...";
+    if (result.authenticated !== true) {
+      statusText.textContent =
+        "ورود تأیید نشد.";
+      return;
+    }
 
-    window.location.href = "/admin.html";
+    statusText.textContent = "ورود موفق بود.";
+
+    showPanel();
+
+    passwordInput.value = "";
+
+    await loadRequests();
 
   } catch (error) {
-    console.error(error);
-    status.textContent = "ارتباط با سرور برقرار نشد.";
+    console.error("LOGIN ERROR:", error);
+
+    statusText.textContent =
+      "ارتباط با سرور برقرار نشد.";
   }
 });
 
-document.getElementById("out").addEventListener("click", async function () {
+
+logoutButton.addEventListener("click", async function () {
   try {
     await fetch("/api/admin/logout", {
       method: "POST",
       credentials: "same-origin"
     });
-  } finally {
-    window.location.href = "/admin.html";
+  } catch (error) {
+    console.error("LOGOUT ERROR:", error);
   }
+
+  showLogin();
+  statusText.textContent = "";
+  T.innerHTML = "";
 });
 
-document.getElementById("ref").addEventListener("click", load);
 
-async function load() {
+refreshButton.addEventListener("click", loadRequests);
+
+
+async function loadRequests() {
   try {
-    const r = await fetch("/api/admin/requests", {
+    const response = await fetch("/api/admin/requests", {
+      method: "GET",
       credentials: "same-origin"
     });
 
-    if (r.status === 401) {
-      L.hidden = false;
-      P.hidden = true;
+    if (response.status === 401) {
+      showLogin();
       return;
     }
 
-    if (!r.ok) {
-      T.innerHTML = "<p>خطا در دریافت درخواست‌ها.</p>";
+    if (!response.ok) {
+      T.innerHTML =
+        "<p>خطا در دریافت درخواست‌ها.</p>";
       return;
     }
 
-    const a = await r.json();
+    const requests = await response.json();
 
-    if (!a.length) {
-      T.innerHTML = "<p>هنوز درخواستی ثبت نشده است.</p>";
+    if (!Array.isArray(requests) || requests.length === 0) {
+      T.innerHTML =
+        "<p>هنوز درخواستی ثبت نشده است.</p>";
       return;
     }
 
     T.innerHTML =
-      "<table><thead><tr>" +
+      "<table>" +
+      "<thead>" +
+      "<tr>" +
       "<th>کد</th>" +
       "<th>نام</th>" +
       "<th>تماس</th>" +
@@ -102,87 +153,166 @@ async function load() {
       "<th>وضعیت</th>" +
       "<th>تاریخ</th>" +
       "<th></th>" +
-      "</tr></thead><tbody>" +
+      "</tr>" +
+      "</thead>" +
+      "<tbody>" +
 
-      a.map(x => `
-        <tr>
-          <td>${esc(x.id)}</td>
-          <td>${esc(x.name)}</td>
-          <td>${esc(x.phone)}</td>
-          <td>${esc(x.grade || "-")}</td>
-          <td>${esc(x.service || "-")}</td>
-          <td>${esc(x.message || "-")}</td>
-          <td>
-            <select class="status" onchange="st(${x.id}, this.value)">
-              <option value="new" ${x.status === "new" ? "selected" : ""}>جدید</option>
-              <option value="contacted" ${x.status === "contacted" ? "selected" : ""}>تماس گرفته شد</option>
-              <option value="done" ${x.status === "done" ? "selected" : ""}>انجام شد</option>
-              <option value="cancelled" ${x.status === "cancelled" ? "selected" : ""}>لغو شد</option>
-            </select>
-          </td>
-          <td>${esc(x.created_at)}</td>
-          <td>
-            <button class="danger" onclick="del(${x.id})">حذف</button>
-          </td>
-        </tr>
-      `).join("") +
+      requests.map(function (item) {
 
-      "</tbody></table>";
+        return `
+          <tr>
+            <td>${esc(item.id)}</td>
+
+            <td>${esc(item.name)}</td>
+
+            <td>${esc(item.phone)}</td>
+
+            <td>${esc(item.grade || "-")}</td>
+
+            <td>${esc(item.service || "-")}</td>
+
+            <td>${esc(item.message || "-")}</td>
+
+            <td>
+              <select
+                class="status"
+                onchange="updateStatus(${Number(item.id)}, this.value)"
+              >
+                <option value="new"
+                  ${item.status === "new" ? "selected" : ""}>
+                  جدید
+                </option>
+
+                <option value="contacted"
+                  ${item.status === "contacted" ? "selected" : ""}>
+                  تماس گرفته شد
+                </option>
+
+                <option value="done"
+                  ${item.status === "done" ? "selected" : ""}>
+                  انجام شد
+                </option>
+
+                <option value="cancelled"
+                  ${item.status === "cancelled" ? "selected" : ""}>
+                  لغو شد
+                </option>
+              </select>
+            </td>
+
+            <td>${esc(item.created_at)}</td>
+
+            <td>
+              <button
+                class="danger"
+                onclick="deleteRequest(${Number(item.id)})"
+              >
+                حذف
+              </button>
+            </td>
+          </tr>
+        `;
+
+      }).join("") +
+
+      "</tbody>" +
+      "</table>";
 
   } catch (error) {
-    console.error(error);
-    T.innerHTML = "<p>خطا در ارتباط با سرور.</p>";
+    console.error("LOAD REQUESTS ERROR:", error);
+
+    T.innerHTML =
+      "<p>ارتباط با سرور برقرار نشد.</p>";
   }
 }
 
-async function st(id, status) {
+
+async function updateStatus(id, status) {
   try {
-    await fetch("/api/admin/requests/" + id, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "same-origin",
-      body: JSON.stringify({
-        status: status
-      })
-    });
+    const response = await fetch(
+      "/api/admin/requests/" + id,
+      {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          status: status
+        })
+      }
+    );
 
-    await load();
+    if (response.status === 401) {
+      showLogin();
+      return;
+    }
+
+    if (!response.ok) {
+      alert("تغییر وضعیت انجام نشد.");
+      return;
+    }
+
+    await loadRequests();
 
   } catch (error) {
-    console.error(error);
+    console.error("UPDATE STATUS ERROR:", error);
+    alert("ارتباط با سرور برقرار نشد.");
   }
 }
 
-async function del(id) {
-  if (!confirm("آیا از حذف این درخواست مطمئن هستید؟")) {
+
+async function deleteRequest(id) {
+  if (!confirm("این درخواست حذف شود؟")) {
     return;
   }
 
   try {
-    await fetch("/api/admin/requests/" + id, {
-      method: "DELETE",
-      credentials: "same-origin"
-    });
+    const response = await fetch(
+      "/api/admin/requests/" + id,
+      {
+        method: "DELETE",
+        credentials: "same-origin"
+      }
+    );
 
-    await load();
+    if (response.status === 401) {
+      showLogin();
+      return;
+    }
+
+    if (!response.ok) {
+      alert("حذف درخواست انجام نشد.");
+      return;
+    }
+
+    await loadRequests();
 
   } catch (error) {
-    console.error(error);
+    console.error("DELETE ERROR:", error);
+    alert("ارتباط با سرور برقرار نشد.");
   }
 }
 
-function esc(v) {
-  return String(v).replace(/[&<>"']/g, function (m) {
-    return {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    }[m];
-  });
+
+function esc(value) {
+  return String(value).replace(
+    /[&<>"']/g,
+    function (character) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[character];
+    }
+  );
 }
 
-check();
+
+window.updateStatus = updateStatus;
+window.deleteRequest = deleteRequest;
+
+
+checkLogin();
