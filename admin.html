@@ -3,73 +3,395 @@
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>پنل مدیریت زیوری</title>
+  <meta name="theme-color" content="#0d1117">
+
+  <title>داشبورد مدیریت | زیوری</title>
 
   <link rel="stylesheet" href="/admin.css">
 </head>
 
 <body>
 
+  <!-- صفحه ورود -->
   <div id="login" class="center">
 
     <form id="lf" class="box">
 
+      <div class="brand-mark">Z</div>
+
+      <p class="eyebrow">ZIVARI CONSULTING</p>
+
       <h2>پنل مدیریت زیوری</h2>
+
+      <p class="login-description">
+        برای ورود به مرکز مدیریت، رمز عبور را وارد کنید.
+      </p>
+
+      <label for="pw">رمز عبور مدیریت</label>
 
       <input
         id="pw"
         type="password"
         placeholder="رمز عبور"
+        autocomplete="current-password"
         required
       >
 
-      <button type="submit">
-        ورود
+      <button type="submit" id="loginBtn">
+        ورود به پنل
       </button>
 
-      <p id="ls"></p>
+      <p id="ls" role="status" aria-live="polite"></p>
+
+      <div class="login-footer">
+        پیشرفت همراه با آرامش
+      </div>
 
     </form>
 
   </div>
 
 
+  <!-- محیط اصلی مدیریت -->
   <div id="panel" hidden>
 
-    <header>
+    <!-- نوار کناری -->
+    <aside class="sidebar">
 
-      <b>
-        زیوری | درخواست‌ها
-      </b>
+      <div class="sidebar-brand">
+        <div class="brand-mark small">Z</div>
 
-      <button id="out">
-        خروج
-      </button>
+        <div>
+          <strong>زیوری</strong>
+          <span>مرکز مدیریت</span>
+        </div>
+      </div>
 
-    </header>
+      <div class="sidebar-caption">منوی اصلی</div>
 
+      <nav class="sidebar-nav" aria-label="منوی مدیریت">
 
-    <main>
+        <button
+          type="button"
+          class="nav-item active"
+          data-section="dashboard"
+        >
+          <span class="nav-icon">▦</span>
+          <span>داشبورد</span>
+        </button>
 
-      <div class="top">
+        <button
+          type="button"
+          class="nav-item"
+          data-section="requests"
+        >
+          <span class="nav-icon">▤</span>
+          <span>درخواست‌های مشاوره</span>
+          <span id="newBadge" class="nav-badge" hidden>۰</span>
+        </button>
 
-        <h1>
-          درخواست‌های مشاوره
-        </h1>
+        <button
+          type="button"
+          class="nav-item"
+          data-section="followups"
+        >
+          <span class="nav-icon">◷</span>
+          <span>پیگیری مراجعان</span>
+        </button>
 
-        <button id="ref">
-          به‌روزرسانی
+      </nav>
+
+      <div class="sidebar-bottom">
+
+        <div class="sidebar-note">
+          <span class="note-icon">✦</span>
+
+          <div>
+            <strong>زیوری</strong>
+            <p>پیشرفت همراه با آرامش</p>
+          </div>
+        </div>
+
+        <button type="button" id="out" class="logout-btn">
+          <span>↪</span>
+          خروج از حساب
         </button>
 
       </div>
 
-      <div id="table"></div>
+    </aside>
 
-    </main>
+
+    <!-- محتوای داشبورد -->
+    <div class="workspace">
+
+      <header class="main-header">
+
+        <div class="header-title">
+          <span class="header-kicker">ZIVARI / MANAGEMENT</span>
+          <h1 id="pageTitle">داشبورد مدیریت</h1>
+        </div>
+
+        <div class="header-actions">
+
+          <div class="admin-status">
+            <span class="status-dot"></span>
+            <span>پنل مدیریت</span>
+          </div>
+
+          <button type="button" id="ref" class="refresh-btn">
+            <span>↻</span>
+            به‌روزرسانی
+          </button>
+
+        </div>
+
+      </header>
+
+
+      <main class="dashboard-content">
+
+        <!-- داشبورد -->
+        <section id="dashboardSection" class="content-section">
+
+          <div class="welcome-banner">
+
+            <div>
+              <span class="welcome-label">ZIVARI CONSULTING</span>
+
+              <h2>به مرکز مدیریت زیوری خوش آمدی</h2>
+
+              <p>
+                اینجا می‌تونی درخواست‌های مشاوره رو بررسی کنی
+                و روند پیگیری مراجعان رو مدیریت کنی.
+              </p>
+            </div>
+
+            <div class="welcome-symbol" aria-hidden="true">Z</div>
+
+          </div>
+
+
+          <!-- کارت‌های آماری -->
+          <div class="stats-grid">
+
+            <article class="stat-card">
+
+              <div class="stat-top">
+                <span>کل درخواست‌ها</span>
+                <span class="stat-icon">▤</span>
+              </div>
+
+              <strong id="totalCount" class="stat-number">—</strong>
+
+              <span class="stat-caption">تمام درخواست‌های ثبت‌شده</span>
+
+            </article>
+
+
+            <article class="stat-card">
+
+              <div class="stat-top">
+                <span>درخواست‌های جدید</span>
+                <span class="stat-icon gold">✦</span>
+              </div>
+
+              <strong id="newCount" class="stat-number">—</strong>
+
+              <span class="stat-caption">نیازمند بررسی اولیه</span>
+
+            </article>
+
+
+            <article class="stat-card">
+
+              <div class="stat-top">
+                <span>در حال پیگیری</span>
+                <span class="stat-icon blue">◷</span>
+              </div>
+
+              <strong id="pendingCount" class="stat-number">—</strong>
+
+              <span class="stat-caption">درخواست‌های در جریان</span>
+
+            </article>
+
+
+            <article class="stat-card">
+
+              <div class="stat-top">
+                <span>تکمیل‌شده</span>
+                <span class="stat-icon green">✓</span>
+              </div>
+
+              <strong id="completedCount" class="stat-number">—</strong>
+
+              <span class="stat-caption">پرونده‌های تکمیل‌شده</span>
+
+            </article>
+
+          </div>
+
+
+          <!-- درخواست‌های اخیر -->
+          <section class="content-card">
+
+            <div class="card-heading">
+
+              <div>
+                <h2>آخرین درخواست‌ها</h2>
+                <p>مروری سریع بر درخواست‌های ثبت‌شده</p>
+              </div>
+
+              <button
+                type="button"
+                class="text-btn"
+                data-section="requests"
+              >
+                مشاهده همه ←
+              </button>
+
+            </div>
+
+            <div id="recentRequests" class="recent-requests">
+
+              <div class="empty-state">
+                <span>▤</span>
+                <p>در حال دریافت اطلاعات...</p>
+              </div>
+
+            </div>
+
+          </section>
+
+        </section>
+
+
+        <!-- فهرست درخواست‌ها -->
+        <section
+          id="requestsSection"
+          class="content-section"
+          hidden
+        >
+
+          <div class="section-intro">
+
+            <div>
+              <h2>درخواست‌های مشاوره</h2>
+              <p>
+                درخواست‌های دریافتی رو بررسی کن و وضعیت هرکدوم رو مدیریت کن.
+              </p>
+            </div>
+
+          </div>
+
+
+          <div class="content-card">
+
+            <div class="toolbar">
+
+              <div class="search-box">
+                <span>⌕</span>
+
+                <input
+                  type="search"
+                  id="searchRequests"
+                  placeholder="جست‌وجوی نام یا شماره تماس..."
+                  aria-label="جست‌وجوی درخواست‌ها"
+                >
+              </div>
+
+
+              <select id="statusFilter" aria-label="فیلتر وضعیت">
+                <option value="">همه وضعیت‌ها</option>
+                <option value="new">جدید</option>
+                <option value="contacted">تماس گرفته شد</option>
+                <option value="scheduled">جلسه تنظیم شد</option>
+                <option value="completed">تکمیل‌شده</option>
+              </select>
+
+            </div>
+
+
+            <div id="table" class="requests-table-wrap">
+
+              <div class="empty-state">
+                <span>▤</span>
+                <p>در حال دریافت درخواست‌ها...</p>
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- پیگیری مراجعان -->
+        <section
+          id="followupsSection"
+          class="content-section"
+          hidden
+        >
+
+          <div class="section-intro">
+
+            <div>
+              <h2>پیگیری مراجعان</h2>
+
+              <p>
+                درخواست‌هایی رو ببین که هنوز در مسیر بررسی و پیگیری قرار دارن.
+              </p>
+            </div>
+
+          </div>
+
+
+          <div class="content-card">
+
+            <div class="card-heading">
+              <div>
+                <h2>فهرست پیگیری</h2>
+                <p>برای مشاهده جزئیات، از بخش درخواست‌ها استفاده کن.</p>
+              </div>
+            </div>
+
+            <div id="followupList">
+
+              <div class="empty-state">
+                <span>◷</span>
+                <p>در حال دریافت اطلاعات...</p>
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <footer class="dashboard-footer">
+          <span>زیوری | مرکز مدیریت مشاوره</span>
+          <span>پیشرفت همراه با آرامش ✦</span>
+        </footer>
+
+      </main>
+
+    </div>
 
   </div>
+
+
+  <!-- نمایش پیام‌های سیستمی -->
+  <div
+    id="toast"
+    class="toast"
+    role="status"
+    aria-live="polite"
+    hidden
+  ></div>
 
 
   <script src="/admin.js"></script>
