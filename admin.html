@@ -1,20 +1,998 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <meta name="theme-color" content="#0d1117">
 
-  <title>داشبورد مدیریت | زیوری</title>
+  <title>پنل مدیریت | زیوری</title>
 
-  <link rel="stylesheet" href="/admin.css">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --panel-light: #1c222c;
+      --border: #303844;
+      --gold: #d4af37;
+      --gold-light: #f0d878;
+      --text: #f0f2f5;
+      --muted: #9ba5b4;
+      --green: #36c98f;
+      --blue: #69a9ff;
+      --red: #ff7373;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 3px;
+    }
+
+    /* صفحه ورود */
+
+    .center {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(
+          ellipse at 50% 10%,
+          rgba(212, 175, 55, .11),
+          transparent 48%
+        ),
+        var(--bg);
+    }
+
+    .box {
+      width: 100%;
+      max-width: 420px;
+      padding: 36px;
+      border: 1px solid rgba(212, 175, 55, .3);
+      border-radius: 24px;
+      background: var(--panel);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, .3);
+    }
+
+    .brand-mark {
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      border: 1px solid var(--gold);
+      border-radius: 20px;
+      background: rgba(212, 175, 55, .08);
+      color: var(--gold);
+      font-family: Georgia, serif;
+      font-size: 34px;
+      font-weight: bold;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--gold);
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 3px;
+    }
+
+    .box h2 {
+      margin: 0;
+      color: var(--text);
+      text-align: center;
+      font-size: 23px;
+    }
+
+    .login-description {
+      margin: 12px 0 26px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+
+    .box label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .box input {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      background: #0d1117;
+      color: var(--text);
+      direction: rtl;
+    }
+
+    .box input:focus {
+      border-color: var(--gold);
+    }
+
+    .box button {
+      width: 100%;
+      min-height: 48px;
+      margin-top: 16px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--gold);
+      color: #171717;
+      font-weight: bold;
+      transition: .2s;
+    }
+
+    .box button:hover {
+      background: var(--gold-light);
+      transform: translateY(-1px);
+    }
+
+    #ls {
+      min-height: 24px;
+      margin: 12px 0 0;
+      color: var(--red);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .login-footer {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      color: var(--gold);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    /* ساختار اصلی پنل */
+
+    #panel {
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: fixed;
+      z-index: 10;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 250px;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 16px;
+      border-left: 1px solid var(--border);
+      background: #11161d;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 8px 28px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-mark.small {
+      width: 46px;
+      height: 46px;
+      flex-shrink: 0;
+      margin: 0;
+      border-radius: 14px;
+      font-size: 25px;
+    }
+
+    .sidebar-brand strong {
+      display: block;
+      color: var(--gold);
+      font-size: 20px;
+    }
+
+    .sidebar-brand span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .sidebar-caption {
+      margin: 26px 10px 12px;
+      color: #778293;
+      font-size: 11px;
+    }
+
+    .sidebar-nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      min-height: 48px;
+      padding: 10px 12px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: transparent;
+      color: #c1c9d4;
+      text-align: right;
+      transition: .2s;
+    }
+
+    .nav-item:hover {
+      background: var(--panel);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      border-color: rgba(212, 175, 55, .2);
+      background: rgba(212, 175, 55, .1);
+      color: var(--gold);
+    }
+
+    .nav-icon {
+      width: 24px;
+      color: var(--gold);
+      text-align: center;
+      font-size: 19px;
+    }
+
+    .nav-badge {
+      min-width: 22px;
+      margin-right: auto;
+      padding: 0 6px;
+      border-radius: 20px;
+      background: var(--gold);
+      color: #171717;
+      text-align: center;
+      font-size: 11px;
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+    }
+
+    .sidebar-note {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding: 14px 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .note-icon {
+      color: var(--gold);
+      font-size: 24px;
+    }
+
+    .sidebar-note strong {
+      color: var(--text);
+    }
+
+    .sidebar-note p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .logout-btn {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid rgba(255, 115, 115, .2);
+      border-radius: 10px;
+      background: rgba(255, 115, 115, .06);
+      color: #ff9b9b;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 115, 115, .13);
+    }
+
+    .logout-btn span {
+      margin-left: 8px;
+    }
+
+    /* محتوای پنل */
+
+    .workspace {
+      min-height: 100vh;
+      margin-right: 250px;
+    }
+
+    .main-header {
+      position: sticky;
+      z-index: 5;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 96px;
+      padding: 18px 32px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13, 17, 23, .94);
+      backdrop-filter: blur(14px);
+    }
+
+    .header-kicker {
+      color: var(--gold);
+      font-size: 10px;
+      letter-spacing: 1px;
+    }
+
+    .header-title h1 {
+      margin: 4px 0 0;
+      color: var(--text);
+      font-size: 21px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .admin-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px rgba(54, 201, 143, .3);
+    }
+
+    .refresh-btn {
+      min-height: 40px;
+      padding: 8px 14px;
+      border: 1px solid rgba(212, 175, 55, .4);
+      border-radius: 9px;
+      background: rgba(212, 175, 55, .08);
+      color: var(--gold);
+    }
+
+    .refresh-btn:hover {
+      background: rgba(212, 175, 55, .15);
+    }
+
+    .refresh-btn span {
+      margin-left: 6px;
+      font-size: 18px;
+    }
+
+    .dashboard-content {
+      width: 100%;
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 30px 32px;
+    }
+
+    .content-section {
+      min-width: 0;
+    }
+
+    .welcome-banner {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      overflow: hidden;
+      min-height: 190px;
+      padding: 30px;
+      border: 1px solid rgba(212, 175, 55, .25);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(
+          circle at 90% 20%,
+          rgba(212, 175, 55, .12),
+          transparent 42%
+        ),
+        linear-gradient(120deg, #191f29, #141920);
+    }
+
+    .welcome-banner > div:first-child {
+      position: relative;
+      z-index: 1;
+      max-width: 700px;
+    }
+
+    .welcome-label {
+      color: var(--gold);
+      font-size: 10px;
+      letter-spacing: 2px;
+    }
+
+    .welcome-banner h2 {
+      margin: 10px 0;
+      color: var(--text);
+      font-size: 23px;
+    }
+
+    .welcome-banner p {
+      max-width: 600px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .welcome-symbol {
+      flex-shrink: 0;
+      color: rgba(212, 175, 55, .22);
+      font-family: Georgia, serif;
+      font-size: 125px;
+      line-height: 1;
+    }
+
+    /* آمار */
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .stat-card {
+      min-width: 0;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel);
+      transition: border-color .2s, transform .2s;
+    }
+
+    .stat-card:hover {
+      border-color: rgba(212, 175, 55, .4);
+      transform: translateY(-2px);
+    }
+
+    .stat-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stat-icon {
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 11px;
+      background: rgba(212, 175, 55, .1);
+      color: var(--gold);
+      font-size: 19px;
+    }
+
+    .stat-icon.blue {
+      background: rgba(105, 169, 255, .1);
+      color: var(--blue);
+    }
+
+    .stat-icon.green {
+      background: rgba(54, 201, 143, .1);
+      color: var(--green);
+    }
+
+    .stat-number {
+      display: block;
+      margin: 12px 0 2px;
+      color: var(--text);
+      font-size: 31px;
+      font-weight: bold;
+      line-height: 1.4;
+    }
+
+    .stat-caption {
+      color: #8792a1;
+      font-size: 11px;
+    }
+
+    /* کارت‌های عمومی */
+
+    .content-card {
+      min-width: 0;
+      margin-bottom: 22px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+
+    .card-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-heading h2 {
+      margin: 0;
+      color: var(--text);
+      font-size: 16px;
+    }
+
+    .card-heading p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .text-btn {
+      border: 0;
+      background: transparent;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+
+    .text-btn:hover {
+      color: var(--gold-light);
+    }
+
+    .section-intro {
+      margin-bottom: 24px;
+    }
+
+    .section-intro h2 {
+      margin: 0 0 5px;
+      color: var(--text);
+      font-size: 23px;
+    }
+
+    .section-intro p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* جست‌وجو و فیلتر */
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      gap: 10px;
+      min-width: 0;
+      min-height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #0d1117;
+    }
+
+    .search-box > span {
+      color: var(--gold);
+      font-size: 23px;
+    }
+
+    .search-box input {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+    }
+
+    .search-box input::placeholder {
+      color: #778293;
+    }
+
+    .toolbar select {
+      min-width: 160px;
+      min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #0d1117;
+      color: var(--text);
+    }
+
+    /* جدول درخواست‌ها */
+
+    .requests-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .requests-table-wrap table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: right;
+    }
+
+    .requests-table-wrap th {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: #1a2029;
+      color: #aeb8c5;
+      font-size: 12px;
+      font-weight: normal;
+      white-space: nowrap;
+    }
+
+    .requests-table-wrap td {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(48, 56, 68, .7);
+      color: #dfe4eb;
+      font-size: 12px;
+      vertical-align: middle;
+    }
+
+    .requests-table-wrap tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .requests-table-wrap tbody tr:hover {
+      background: rgba(255, 255, 255, .02);
+    }
+
+    .requests-table-wrap button,
+    .requests-table-wrap select {
+      max-width: 100%;
+      margin: 3px;
+      padding: 6px 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: #202733;
+      color: var(--text);
+      font-size: 11px;
+    }
+
+    .requests-table-wrap button:hover {
+      border-color: var(--gold);
+    }
+
+    .requests-table-wrap a {
+      color: var(--gold);
+    }
+
+    /* آخرین درخواست‌ها و پیگیری */
+
+    .recent-requests,
+    #followupList {
+      padding: 8px 24px;
+    }
+
+    .recent-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .recent-item:last-child {
+      border-bottom: 0;
+    }
+
+    .recent-item strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .recent-item small {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .recent-status {
+      padding: 4px 10px;
+      border: 1px solid rgba(212, 175, 55, .25);
+      border-radius: 20px;
+      color: var(--gold);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      padding: 36px 16px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty-state > span {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--gold);
+      font-size: 32px;
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 12px;
+    }
+
+    .dashboard-footer {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 24px 0 10px;
+      color: #778293;
+      font-size: 11px;
+    }
+
+    .dashboard-footer span:last-child {
+      color: var(--gold);
+    }
+
+    .toast {
+      position: fixed;
+      z-index: 100;
+      left: 20px;
+      bottom: 20px;
+      max-width: calc(100% - 40px);
+      padding: 12px 18px;
+      border: 1px solid rgba(212, 175, 55, .4);
+      border-radius: 10px;
+      background: var(--panel-light);
+      color: var(--text);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, .3);
+    }
+
+    /* تبلت */
+
+    @media (max-width: 1100px) {
+      .sidebar {
+        width: 215px;
+      }
+
+      .workspace {
+        margin-right: 215px;
+      }
+
+      .dashboard-content {
+        padding: 24px 20px;
+      }
+
+      .main-header {
+        padding: 18px 20px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    /* موبایل */
+
+    @media (max-width: 760px) {
+      .sidebar {
+        position: static;
+        width: 100%;
+        padding: 14px;
+        border-left: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .sidebar-brand {
+        padding-bottom: 14px;
+      }
+
+      .sidebar-caption,
+      .sidebar-bottom {
+        display: none;
+      }
+
+      .sidebar-nav {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+        overflow-x: auto;
+      }
+
+      .nav-item {
+        flex: 0 0 auto;
+        width: auto;
+        min-height: 42px;
+        padding: 8px 12px;
+        white-space: nowrap;
+      }
+
+      .nav-icon {
+        width: auto;
+        font-size: 16px;
+      }
+
+      .workspace {
+        margin-right: 0;
+      }
+
+      .main-header {
+        position: static;
+        min-height: auto;
+        padding: 18px 16px;
+        align-items: flex-start;
+      }
+
+      .header-title h1 {
+        font-size: 17px;
+      }
+
+      .header-kicker {
+        font-size: 9px;
+      }
+
+      .header-actions {
+        gap: 8px;
+      }
+
+      .admin-status {
+        display: none;
+      }
+
+      .refresh-btn {
+        padding: 7px 9px;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+
+      .dashboard-content {
+        padding: 18px 14px;
+      }
+
+      .welcome-banner {
+        min-height: auto;
+        padding: 22px 18px;
+      }
+
+      .welcome-banner h2 {
+        font-size: 19px;
+      }
+
+      .welcome-banner p {
+        font-size: 12px;
+      }
+
+      .welcome-symbol {
+        font-size: 70px;
+      }
+
+      .stats-grid {
+        gap: 10px;
+        margin: 16px 0;
+      }
+
+      .stat-card {
+        padding: 14px;
+      }
+
+      .stat-top {
+        font-size: 11px;
+      }
+
+      .stat-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+      }
+
+      .stat-number {
+        font-size: 25px;
+      }
+
+      .stat-caption {
+        font-size: 10px;
+      }
+
+      .card-heading {
+        padding: 17px;
+      }
+
+      .toolbar {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 16px;
+      }
+
+      .toolbar select {
+        width: 100%;
+      }
+
+      .recent-requests,
+      #followupList {
+        padding: 8px 16px;
+      }
+
+      .dashboard-footer {
+        font-size: 10px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .welcome-symbol {
+        display: none;
+      }
+
+      .main-header {
+        flex-wrap: wrap;
+      }
+
+      .header-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+
+      .box {
+        padding: 26px 20px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-  <!-- صفحه ورود -->
+  <!-- ورود به پنل -->
   <div id="login" class="center">
 
     <form id="lf" class="box">
@@ -26,7 +1004,7 @@
       <h2>پنل مدیریت زیوری</h2>
 
       <p class="login-description">
-        برای ورود به مرکز مدیریت، رمز عبور را وارد کنید.
+        برای ورود به مرکز مدیریت، رمز عبور را وارد کن.
       </p>
 
       <label for="pw">رمز عبور مدیریت</label>
@@ -54,19 +1032,20 @@
   </div>
 
 
-  <!-- محیط اصلی مدیریت -->
+  <!-- پنل اصلی -->
   <div id="panel" hidden>
 
-    <!-- نوار کناری -->
     <aside class="sidebar">
 
       <div class="sidebar-brand">
+
         <div class="brand-mark small">Z</div>
 
         <div>
           <strong>زیوری</strong>
           <span>مرکز مدیریت</span>
         </div>
+
       </div>
 
       <div class="sidebar-caption">منوی اصلی</div>
@@ -124,7 +1103,6 @@
     </aside>
 
 
-    <!-- محتوای داشبورد -->
     <div class="workspace">
 
       <header class="main-header">
@@ -174,11 +1152,9 @@
           </div>
 
 
-          <!-- کارت‌های آماری -->
           <div class="stats-grid">
 
             <article class="stat-card">
-
               <div class="stat-top">
                 <span>کل درخواست‌ها</span>
                 <span class="stat-icon">▤</span>
@@ -186,27 +1162,27 @@
 
               <strong id="totalCount" class="stat-number">—</strong>
 
-              <span class="stat-caption">تمام درخواست‌های ثبت‌شده</span>
-
+              <span class="stat-caption">
+                تمام درخواست‌های ثبت‌شده
+              </span>
             </article>
 
 
             <article class="stat-card">
-
               <div class="stat-top">
                 <span>درخواست‌های جدید</span>
-                <span class="stat-icon gold">✦</span>
+                <span class="stat-icon">✦</span>
               </div>
 
               <strong id="newCount" class="stat-number">—</strong>
 
-              <span class="stat-caption">نیازمند بررسی اولیه</span>
-
+              <span class="stat-caption">
+                نیازمند بررسی اولیه
+              </span>
             </article>
 
 
             <article class="stat-card">
-
               <div class="stat-top">
                 <span>در حال پیگیری</span>
                 <span class="stat-icon blue">◷</span>
@@ -214,13 +1190,13 @@
 
               <strong id="pendingCount" class="stat-number">—</strong>
 
-              <span class="stat-caption">درخواست‌های در جریان</span>
-
+              <span class="stat-caption">
+                درخواست‌های در جریان
+              </span>
             </article>
 
 
             <article class="stat-card">
-
               <div class="stat-top">
                 <span>تکمیل‌شده</span>
                 <span class="stat-icon green">✓</span>
@@ -228,14 +1204,14 @@
 
               <strong id="completedCount" class="stat-number">—</strong>
 
-              <span class="stat-caption">پرونده‌های تکمیل‌شده</span>
-
+              <span class="stat-caption">
+                پرونده‌های تکمیل‌شده
+              </span>
             </article>
 
           </div>
 
 
-          <!-- درخواست‌های اخیر -->
           <section class="content-card">
 
             <div class="card-heading">
@@ -259,7 +1235,7 @@
 
               <div class="empty-state">
                 <span>▤</span>
-                <p>در حال دریافت اطلاعات...</p>
+                <p>برای نمایش درخواست‌ها، ابتدا اطلاعات را بارگذاری کن.</p>
               </div>
 
             </div>
@@ -269,7 +1245,7 @@
         </section>
 
 
-        <!-- فهرست درخواست‌ها -->
+        <!-- درخواست‌ها -->
         <section
           id="requestsSection"
           class="content-section"
@@ -277,14 +1253,11 @@
         >
 
           <div class="section-intro">
+            <h2>درخواست‌های مشاوره</h2>
 
-            <div>
-              <h2>درخواست‌های مشاوره</h2>
-              <p>
-                درخواست‌های دریافتی رو بررسی کن و وضعیت هرکدوم رو مدیریت کن.
-              </p>
-            </div>
-
+            <p>
+              درخواست‌های دریافتی رو بررسی کن و وضعیت هرکدوم رو مدیریت کن.
+            </p>
           </div>
 
 
@@ -303,7 +1276,6 @@
                 >
               </div>
 
-
               <select id="statusFilter" aria-label="فیلتر وضعیت">
                 <option value="">همه وضعیت‌ها</option>
                 <option value="new">جدید</option>
@@ -319,7 +1291,7 @@
 
               <div class="empty-state">
                 <span>▤</span>
-                <p>در حال دریافت درخواست‌ها...</p>
+                <p>در حال آماده‌سازی درخواست‌ها...</p>
               </div>
 
             </div>
@@ -329,7 +1301,7 @@
         </section>
 
 
-        <!-- پیگیری مراجعان -->
+        <!-- پیگیری -->
         <section
           id="followupsSection"
           class="content-section"
@@ -337,15 +1309,11 @@
         >
 
           <div class="section-intro">
+            <h2>پیگیری مراجعان</h2>
 
-            <div>
-              <h2>پیگیری مراجعان</h2>
-
-              <p>
-                درخواست‌هایی رو ببین که هنوز در مسیر بررسی و پیگیری قرار دارن.
-              </p>
-            </div>
-
+            <p>
+              درخواست‌هایی رو ببین که هنوز در مسیر بررسی و پیگیری قرار دارن.
+            </p>
           </div>
 
 
@@ -354,7 +1322,9 @@
             <div class="card-heading">
               <div>
                 <h2>فهرست پیگیری</h2>
-                <p>برای مشاهده جزئیات، از بخش درخواست‌ها استفاده کن.</p>
+                <p>
+                  برای مدیریت وضعیت درخواست‌ها از بخش درخواست‌های مشاوره استفاده کن.
+                </p>
               </div>
             </div>
 
@@ -362,7 +1332,7 @@
 
               <div class="empty-state">
                 <span>◷</span>
-                <p>در حال دریافت اطلاعات...</p>
+                <p>اطلاعات پیگیری پس از اتصال کد مدیریتی نمایش داده می‌شود.</p>
               </div>
 
             </div>
@@ -384,7 +1354,6 @@
   </div>
 
 
-  <!-- نمایش پیام‌های سیستمی -->
   <div
     id="toast"
     class="toast"
@@ -394,8 +1363,8 @@
   ></div>
 
 
+  <!-- فایل فعلی جاوااسکریپت حفظ شده است -->
   <script src="/admin.js"></script>
 
 </body>
-
 </html>
