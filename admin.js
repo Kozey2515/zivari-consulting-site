@@ -3,7 +3,6 @@
 (() => {
   const $ = (selector) => document.querySelector(selector);
 
-  // عناصر اصلی صفحه
   const loginBox = $("#login");
   const panel = $("#panel");
   const loginForm = $("#lf");
@@ -13,19 +12,16 @@
   const logoutButton = $("#out");
   const refreshButton = $("#ref");
 
-  // بخش درخواست‌ها
   const table = $("#table");
   const searchInput = $("#searchRequests");
   const statusFilter = $("#statusFilter");
 
-  // آمار داشبورد
   const totalCount = $("#totalCount");
   const newCount = $("#newCount");
   const pendingCount = $("#pendingCount");
   const completedCount = $("#completedCount");
   const newBadge = $("#newBadge");
   const recentRequests = $("#recentRequests");
-
   const toastElement = $("#toast");
 
   const VALID_STATUSES = [
@@ -42,11 +38,33 @@
     cancelled: "لغوشده"
   };
 
+  const SECTION_TITLES = {
+    dashboard: "داشبورد مدیریت",
+    requests: "درخواست‌های مشاوره",
+    followups: "پیگیری مراجعان",
+    students: "پرونده دانش‌آموزان",
+    appointments: "جلسات مشاوره",
+    reports: "گزارش‌های مدیریتی"
+  };
+
+  const SECTION_IDS = {
+    dashboard: "dashboardSection",
+    requests: "requestsSection",
+    followups: "followupsSection",
+    students: "studentsSection",
+    appointments: "appointmentsSection",
+    reports: "reportsSection"
+  };
+
   let requests = [];
   let isLoading = false;
+  let isAuthenticated = false;
   let toastTimer = null;
 
-  // تبدیل امن متن به HTML
+  /* =====================================
+     توابع عمومی
+  ===================================== */
+
   function escapeHTML(value) {
     return String(value ?? "").replace(/[&<>"']/g, (char) => {
       const entities = {
@@ -61,7 +79,6 @@
     });
   }
 
-  // نمایش پیام
   function showToast(message, type = "success") {
     if (!toastElement) {
       alert(message);
@@ -69,10 +86,10 @@
     }
 
     toastElement.textContent = message;
-    toastElement.hidden = false;
-
     toastElement.style.borderColor =
       type === "error" ? "#ff7777" : "#d4af37";
+
+    toastElement.hidden = false;
 
     clearTimeout(toastTimer);
 
@@ -81,7 +98,6 @@
     }, 3500);
   }
 
-  // ارتباط با سرور
   async function api(url, options = {}) {
     const response = await fetch(url, {
       credentials: "same-origin",
@@ -103,66 +119,35 @@
       data = {};
     }
 
-    if (response.status === 401) {
-      showLogin("نشست شما منقضی شده است؛ دوباره وارد شوید.");
-      throw new Error("برای ادامه، دوباره وارد پنل شوید.");
-    }
-
-    if (!response.ok || data.ok === false) {
-      throw new Error(
+    if (!response.ok) {
+      const error = new Error(
         data.error || `خطای سرور (${response.status})`
       );
+
+      error.status = response.status;
+
+      throw error;
     }
 
     return data;
   }
 
-  // نمایش فرم ورود
-  function showLogin(message = "") {
-    if (loginBox) {
-      loginBox.hidden = false;
-      loginBox.style.display = "";
-    }
+  function setNumber(element, value) {
+    if (!element) return;
 
-    if (panel) {
-      panel.hidden = true;
-      panel.style.display = "";
-    }
+    const number = Number(value || 0);
 
-    if (loginStatus) {
-      loginStatus.textContent = message;
-    }
-
-    if (passwordInput) {
-      passwordInput.value = "";
-    }
+    element.textContent = Number.isFinite(number)
+      ? number.toLocaleString("fa-IR")
+      : "۰";
   }
 
-  // نمایش پنل مدیریت
-  function showPanel() {
-    if (loginBox) {
-      loginBox.hidden = true;
-      loginBox.style.display = "";
-    }
-
-    if (panel) {
-      panel.hidden = false;
-      panel.style.display = "";
-    }
-
-    if (loginStatus) {
-      loginStatus.textContent = "";
-    }
-  }
-
-  // قالب‌بندی تاریخ
   function formatDate(value) {
-    if (!value) return "—";
+    if (!value) return "نامشخص";
 
-    let date;
-
-    // تاریخ‌های دیتابیس ممکن است بدون منطقه زمانی باشند.
-    date = new Date(value);
+    const date = new Date(
+      String(value).replace(" ", "T")
+    );
 
     if (Number.isNaN(date.getTime())) {
       return String(value);
@@ -178,11 +163,114 @@
     }
   }
 
-  // هماهنگ‌کردن فیلتر وضعیت با وضعیت‌های سرور
+  /* =====================================
+     نمایش فرم ورود و پنل
+  ===================================== */
+
+  function showLogin(message = "") {
+    isAuthenticated = false;
+
+    if (loginBox) {
+      loginBox.hidden = false;
+    }
+
+    if (panel) {
+      panel.hidden = true;
+    }
+
+    if (loginStatus) {
+      loginStatus.textContent = message;
+    }
+
+    if (passwordInput) {
+      passwordInput.value = "";
+    }
+  }
+
+  function showPanel() {
+    isAuthenticated = true;
+
+    if (loginBox) {
+      loginBox.hidden = true;
+    }
+
+    if (panel) {
+      panel.hidden = false;
+    }
+
+    if (loginStatus) {
+      loginStatus.textContent = "";
+    }
+  }
+
+  /* =====================================
+     مدیریت بخش‌های پنل
+  ===================================== */
+
+  function showSection(name) {
+    if (!isAuthenticated) return;
+
+    const selectedId = SECTION_IDS[name];
+
+    if (!selectedId) return;
+
+    Object.values(SECTION_IDS).forEach((id) => {
+      const section = document.getElementById(id);
+
+      if (section) {
+        section.hidden = true;
+      }
+    });
+
+    const selected = document.getElementById(selectedId);
+
+    if (selected) {
+      selected.hidden = false;
+    }
+
+    document.querySelectorAll(".nav-item").forEach((button) => {
+      button.classList.toggle(
+        "active",
+        button.dataset.section === name
+      );
+    });
+
+    const title = $("#pageTitle");
+
+    if (title) {
+      title.textContent = SECTION_TITLES[name];
+    }
+
+    if (name === "dashboard") {
+      loadDashboard().catch(handleError);
+    }
+
+    if (name === "requests") {
+      loadRequests().catch(handleError);
+    }
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }
+
+  function setupNavigation() {
+    document.querySelectorAll("[data-section]").forEach((button) => {
+      button.addEventListener("click", () => {
+        showSection(button.dataset.section);
+      });
+    });
+  }
+
+  /* =====================================
+     فیلتر وضعیت درخواست‌ها
+  ===================================== */
+
   function setupStatusFilter() {
     if (!statusFilter) return;
 
-    const oldValue = statusFilter.value;
+    const currentValue = statusFilter.value;
 
     statusFilter.innerHTML = `
       <option value="">همه وضعیت‌ها</option>
@@ -192,22 +280,15 @@
       <option value="cancelled">لغوشده</option>
     `;
 
-    statusFilter.value = [
-      "",
-      ...VALID_STATUSES
-    ].includes(oldValue) ? oldValue : "";
+    statusFilter.value = VALID_STATUSES.includes(currentValue)
+      ? currentValue
+      : "";
   }
 
-  function setNumber(element, value) {
-    if (element) {
-      const number = Number(value);
-      element.textContent = Number.isFinite(number)
-        ? number.toLocaleString("fa-IR")
-        : "۰";
-    }
-  }
+  /* =====================================
+     داشبورد
+  ===================================== */
 
-  // دریافت آمار داشبورد
   async function loadDashboard() {
     const data = await api("/api/admin/dashboard");
     const stats = data.stats || {};
@@ -218,10 +299,10 @@
     setNumber(completedCount, stats.completed);
 
     if (newBadge) {
-      const count = Number(stats.new) || 0;
+      const count = Number(stats.new || 0);
 
       newBadge.textContent = count.toLocaleString("fa-IR");
-      newBadge.hidden = count <= 0;
+      newBadge.hidden = count === 0;
     }
 
     renderRecentRequests(
@@ -229,17 +310,17 @@
     );
   }
 
-  // نمایش آخرین درخواست‌ها
   function renderRecentRequests(items) {
     if (!recentRequests) return;
 
-    if (items.length === 0) {
+    if (!items.length) {
       recentRequests.innerHTML = `
         <div class="empty">
           <strong>▤</strong>
           هنوز درخواستی ثبت نشده است.
         </div>
       `;
+
       return;
     }
 
@@ -251,23 +332,47 @@
       return `
         <div class="recent-item">
           <div>
-            <strong>${escapeHTML(item.name || "بدون نام")}</strong>
-            <small>${escapeHTML(item.phone || "—")}</small>
+            <strong>
+              ${escapeHTML(item.name || "بدون نام")}
+            </strong>
+
+            <small>
+              ${escapeHTML(item.phone || "—")}
+            </small>
           </div>
 
           <div>
             <span class="status-pill">
               ${STATUS_LABELS[status]}
             </span>
+
             <br>
-            <small>${escapeHTML(formatDate(item.created_at))}</small>
+
+            <small>
+              ${escapeHTML(formatDate(item.created_at))}
+            </small>
           </div>
         </div>
       `;
     }).join("");
   }
 
-  // اعمال جست‌وجو و فیلتر
+  /* =====================================
+     درخواست‌های مشاوره
+  ===================================== */
+
+  async function loadRequests() {
+    const data = await api("/api/admin/requests");
+
+    requests = Array.isArray(data)
+      ? data
+      : Array.isArray(data.requests)
+        ? data.requests
+        : [];
+
+    renderRequests();
+  }
+
   function getFilteredRequests() {
     const term = (searchInput?.value || "")
       .trim()
@@ -295,19 +400,19 @@
     });
   }
 
-  // ساخت جدول درخواست‌ها
   function renderRequests() {
     if (!table) return;
 
     const filtered = getFilteredRequests();
 
-    if (filtered.length === 0) {
+    if (!filtered.length) {
       table.innerHTML = `
         <div class="empty">
           <strong>⌕</strong>
           درخواستی با این مشخصات پیدا نشد.
         </div>
       `;
+
       return;
     }
 
@@ -337,9 +442,7 @@
 
           <td>${escapeHTML(item.service || "—")}</td>
 
-          <td>
-            ${escapeHTML(item.message || "—")}
-          </td>
+          <td>${escapeHTML(item.message || "—")}</td>
 
           <td>
             <select
@@ -390,22 +493,12 @@
     `;
   }
 
-  // دریافت درخواست‌ها
-  async function loadRequests() {
-    const data = await api("/api/admin/requests");
+  /* =====================================
+     به‌روزرسانی اطلاعات
+  ===================================== */
 
-    requests = Array.isArray(data.requests)
-      ? data.requests
-      : Array.isArray(data)
-        ? data
-        : [];
-
-    renderRequests();
-  }
-
-  // بروزرسانی اطلاعات
   async function refreshAll() {
-    if (isLoading) return;
+    if (isLoading || !isAuthenticated) return;
 
     isLoading = true;
 
@@ -415,7 +508,7 @@
 
     if (refreshButton) {
       refreshButton.disabled = true;
-      refreshButton.textContent = "در حال بروزرسانی…";
+      refreshButton.textContent = "در حال بروزرسانی...";
     }
 
     try {
@@ -424,34 +517,39 @@
         loadRequests()
       ]);
 
-      const failed = results.filter(
+      const failed = results.find(
         (result) => result.status === "rejected"
       );
 
-      if (failed.length > 0) {
-        const error = failed[0].reason;
-
-        showToast(
-          error?.message || "دریافت بخشی از اطلاعات ناموفق بود.",
-          "error"
-        );
+      if (failed) {
+        handleError(failed.reason);
+      } else {
+        showToast("اطلاعات با موفقیت به‌روزرسانی شد.");
       }
     } finally {
       isLoading = false;
 
       if (refreshButton) {
         refreshButton.disabled = false;
-        refreshButton.textContent = originalText || "↻ به‌روزرسانی";
+        refreshButton.textContent =
+          originalText || "↻ به‌روزرسانی";
       }
     }
   }
 
-  // بررسی اعتبار نشست
+  /* =====================================
+     ورود و بررسی نشست
+  ===================================== */
+
   async function checkAuthentication() {
+    // فرم ابتدا نمایش داده می‌شود و فقط پس از تأیید
+    // سرور، پنل مدیریت باز خواهد شد.
+    showLogin();
+
     try {
       const data = await api("/api/admin/me");
 
-      if (data.authenticated) {
+      if (data.authenticated === true) {
         showPanel();
         setupStatusFilter();
         await refreshAll();
@@ -459,12 +557,14 @@
         showLogin();
       }
     } catch (error) {
-      showLogin();
       console.error("Authentication check failed:", error);
+
+      showLogin(
+        "بررسی ورود ناموفق بود. اتصال سرور را بررسی کن."
+      );
     }
   }
 
-  // ورود
   if (loginForm) {
     loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -472,21 +572,28 @@
       const password = passwordInput?.value || "";
 
       if (!password) {
-        showToast("لطفاً رمز عبور را وارد کن.", "error");
+        if (loginStatus) {
+          loginStatus.textContent = "رمز عبور را وارد کن.";
+        }
+
         passwordInput?.focus();
         return;
       }
 
       if (loginButton) {
         loginButton.disabled = true;
-        loginButton.textContent = "در حال ورود…";
+        loginButton.textContent = "در حال ورود...";
       }
 
       try {
-        await api("/api/admin/login", {
+        const result = await api("/api/admin/login", {
           method: "POST",
           body: JSON.stringify({ password })
         });
+
+        if (!result.authenticated) {
+          throw new Error("ورود تأیید نشد.");
+        }
 
         if (passwordInput) {
           passwordInput.value = "";
@@ -498,10 +605,14 @@
         await refreshAll();
 
         showToast("ورود با موفقیت انجام شد.");
-      } catch (error) {
-        showLogin(error.message || "ورود انجام نشد.");
 
+      } catch (error) {
         console.error("Login failed:", error);
+
+        showLogin(
+          error.message || "ورود انجام نشد. دوباره تلاش کن."
+        );
+
       } finally {
         if (loginButton) {
           loginButton.disabled = false;
@@ -511,7 +622,10 @@
     });
   }
 
-  // خروج
+  /* =====================================
+     خروج
+  ===================================== */
+
   if (logoutButton) {
     logoutButton.addEventListener("click", async () => {
       logoutButton.disabled = true;
@@ -521,32 +635,24 @@
           method: "POST",
           body: JSON.stringify({})
         });
-      } catch (error) {
-        console.error("Logout request failed:", error);
-      } finally {
+
         requests = [];
+
         showLogin("از پنل مدیریت خارج شدی.");
+
+      } catch (error) {
+        handleError(error);
+
+      } finally {
         logoutButton.disabled = false;
       }
     });
   }
 
-  // بروزرسانی دستی
-  if (refreshButton) {
-    refreshButton.addEventListener("click", refreshAll);
-  }
+  /* =====================================
+     تغییر وضعیت درخواست
+  ===================================== */
 
-  // جست‌وجوی زنده
-  if (searchInput) {
-    searchInput.addEventListener("input", renderRequests);
-  }
-
-  // فیلتر وضعیت
-  if (statusFilter) {
-    statusFilter.addEventListener("change", renderRequests);
-  }
-
-  // تغییر وضعیت درخواست
   if (table) {
     table.addEventListener("change", async (event) => {
       const select = event.target.closest(
@@ -566,9 +672,11 @@
         return;
       }
 
-      const previous = requests.find(
+      const request = requests.find(
         (item) => Number(item.id) === id
-      )?.status;
+      );
+
+      const previousStatus = request?.status;
 
       select.disabled = true;
 
@@ -578,35 +686,35 @@
           body: JSON.stringify({ status })
         });
 
-        const request = requests.find(
-          (item) => Number(item.id) === id
-        );
-
         if (request) {
           request.status = status;
         }
 
         renderRequests();
+
         await loadDashboard();
 
-        showToast("وضعیت درخواست بروزرسانی شد.");
+        showToast("وضعیت درخواست تغییر کرد.");
+
       } catch (error) {
         showToast(
           error.message || "تغییر وضعیت انجام نشد.",
           "error"
         );
 
-        if (previous) {
-          select.value = previous;
+        if (previousStatus) {
+          select.value = previousStatus;
         }
 
-        console.error("Status update failed:", error);
       } finally {
         select.disabled = false;
       }
     });
 
-    // حذف درخواست
+    /* ===================================
+       حذف درخواست
+    =================================== */
+
     table.addEventListener("click", async (event) => {
       const button = event.target.closest(
         'button[data-action="delete"]'
@@ -620,7 +728,7 @@
       if (!Number.isInteger(id) || id < 1) return;
 
       const confirmed = confirm(
-        "آیا مطمئنی که می‌خواهی این درخواست را حذف کنی؟ این کار قابل بازگشت نیست."
+        "آیا از حذف این درخواست مطمئنی؟ این کار قابل بازگشت نیست."
       );
 
       if (!confirmed) return;
@@ -637,42 +745,63 @@
         );
 
         renderRequests();
+
         await loadDashboard();
 
         showToast("درخواست حذف شد.");
-      } catch (error) {
-        showToast(
-          error.message || "حذف درخواست انجام نشد.",
-          "error"
-        );
 
-        console.error("Delete request failed:", error);
+      } catch (error) {
+        handleError(error);
+
       } finally {
         button.disabled = false;
       }
     });
   }
 
-  // ناوبری بخش‌های پنل
-  document.querySelectorAll("[data-section]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const section = button.dataset.section;
+  /* =====================================
+     جست‌وجو و فیلتر
+  ===================================== */
 
-      if (section === "dashboard") {
-        loadDashboard().catch((error) => {
-          showToast(error.message, "error");
-        });
-      }
+  if (searchInput) {
+    searchInput.addEventListener("input", renderRequests);
+  }
 
-      if (section === "requests") {
-        loadRequests().catch((error) => {
-          showToast(error.message, "error");
-        });
-      }
-    });
-  });
+  if (statusFilter) {
+    statusFilter.addEventListener("change", renderRequests);
+  }
 
-  // شروع برنامه
+  if (refreshButton) {
+    refreshButton.addEventListener("click", refreshAll);
+  }
+
+  /* =====================================
+     مدیریت خطا
+  ===================================== */
+
+  function handleError(error) {
+    if (error?.status === 401) {
+      showLogin(
+        "نشست ورود معتبر نیست. لطفاً دوباره وارد شو."
+      );
+
+      return;
+    }
+
+    console.error("Panel error:", error);
+
+    showToast(
+      error?.message || "خطایی رخ داد. دوباره تلاش کن.",
+      "error"
+    );
+  }
+
+  /* =====================================
+     شروع برنامه
+  ===================================== */
+
   setupStatusFilter();
+  setupNavigation();
   checkAuthentication();
+
 })();
