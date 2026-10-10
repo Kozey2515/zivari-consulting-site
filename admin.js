@@ -1,613 +1,518 @@
-const loginBox = document.getElementById("login");
-const panel = document.getElementById("panel");
-const table = document.getElementById("table");
+"use strict";
 
-const loginForm = document.getElementById("lf");
-const passwordInput = document.getElementById("pw");
-const loginStatus = document.getElementById("ls");
+(() => {
+  const $ = (selector) => document.querySelector(selector);
 
-const logoutButton = document.getElementById("out");
-const refreshButton = document.getElementById("ref");
+  const loginBox = $("#login");
+  const panel = $("#panel");
+  const loginForm = $("#lf");
+  const passwordInput = $("#pw");
+  const loginStatus = $("#ls");
+  const loginButton = $("#loginBtn");
+  const logoutButton = $("#out");
+  const refreshButton = $("#ref");
 
+  const table = $("#table");
+  const searchInput = $("#searchRequests");
+  const statusFilter = $("#statusFilter");
 
-function showPanel() {
-    loginBox.hidden = true;
-    panel.hidden = false;
-}
+  const totalCount = $("#totalCount");
+  const newCount = $("#newCount");
+  const pendingCount = $("#pendingCount");
+  const completedCount = $("#completedCount");
+  const newBadge = $("#newBadge");
+  const recentRequests = $("#recentRequests");
 
+  const toastElement = $("#toast");
 
-function showLogin() {
-    loginBox.hidden = false;
-    panel.hidden = true;
-}
+  const VALID_STATUSES = ["new", "contacted", "done", "cancelled"];
 
+  const STATUS_LABELS = {
+    new: "جدید",
+    contacted: "در حال پیگیری",
+    done: "تکمیل‌شده",
+    cancelled: "لغوشده"
+  };
 
-async function checkAuthentication() {
+  let requests = [];
+  let isLoading = false;
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
+  }
+
+  function showToast(message, type = "success") {
+    if (!toastElement) {
+      alert(message);
+      return;
+    }
+
+    toastElement.textContent = message;
+    toastElement.classList.remove("show", "success", "error");
+
+    toastElement.classList.add(type === "error" ? "error" : "success");
+    toastElement.classList.add("show");
+
+    clearTimeout(showToast.timer);
+
+    showToast.timer = setTimeout(() => {
+      toastElement.classList.remove("show");
+    }, 3000);
+  }
+
+  async function api(url, options = {}) {
+    const response = await fetch(url, {
+      credentials: "same-origin",
+      cache: "no-store",
+      ...options,
+      headers: {
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(options.headers || {})
+      }
+    });
+
+    let data = {};
 
     try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
 
-        const response = await fetch(
-            "/api/admin/me",
-            {
-                method: "GET",
-                credentials: "include",
-                cache: "no-store"
-            }
-        );
+    if (response.status === 401) {
+      showLogin();
+      throw new Error("نشست شما منقضی شده است؛ دوباره وارد شوید.");
+    }
 
-        const data = await response.json();
+    if (!response.ok || data.ok === false) {
+      throw new Error(data.error || "ارتباط با سرور با مشکل مواجه شد.");
+    }
 
-        console.log("ADMIN AUTH:", data);
+    return data;
+  }
 
-        if (data.authenticated === true) {
+  function showLogin(message = "") {
+    if (loginBox) loginBox.style.display = "";
+    if (panel) panel.style.display = "none";
 
-            showPanel();
+    if (loginStatus) {
+      loginStatus.textContent = message;
+    }
+  }
 
-            await loadRequests();
+  function showPanel() {
+    if (loginBox) loginBox.style.display = "none";
+    if (panel) panel.style.display = "";
+    if (loginStatus) loginStatus.textContent = "";
+  }
 
-        } else {
+  function formatDate(value) {
+    if (!value) return "—";
 
-            showLogin();
+    const date = new Date(value);
 
-        }
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
 
+    try {
+      return new Intl.DateTimeFormat("fa-IR", {
+        dateStyle: "medium",
+        timeStyle: "short"
+      }).format(date);
+    } catch {
+      return date.toLocaleString();
+    }
+  }
+
+  function ensureStatusFilter() {
+    if (!statusFilter) return;
+
+    const currentValue = statusFilter.value;
+
+    statusFilter.innerHTML = `
+      <option value="">همه وضعیت‌ها</option>
+      <option value="new">جدید</option>
+      <option value="contacted">در حال پیگیری</option>
+      <option value="done">تکمیل‌شده</option>
+      <option value="cancelled">لغوشده</option>
+    `;
+
+    if (["", ...VALID_STATUSES].includes(currentValue)) {
+      statusFilter.value = currentValue;
+    }
+  }
+
+  function setText(element, value) {
+    if (element) element.textContent = String(value ?? 0);
+  }
+
+  async function loadDashboard() {
+    const data = await api("/api/admin/dashboard");
+
+    const stats = data.stats || {};
+
+    setText(totalCount, stats.total);
+    setText(newCount, stats.new);
+    setText(pendingCount, stats.pending);
+    setText(completedCount, stats.completed);
+
+    if (newBadge) {
+      newBadge.textContent = String(stats.new ?? 0);
+      newBadge.style.display = Number(stats.new) > 0 ? "" : "none";
+    }
+
+    renderRecentRequests(data.recent || []);
+  }
+
+  function renderRecentRequests(items) {
+    if (!recentRequests) return;
+
+    if (!items.length) {
+      recentRequests.innerHTML = `
+        <div class="empty-state">
+          هنوز درخواستی ثبت نشده است.
+        </div>
+      `;
+      return;
+    }
+
+    recentRequests.innerHTML = items.map((item) => `
+      <div class="recent-item">
+        <div class="recent-item-info">
+          <strong>${escapeHTML(item.name)}</strong>
+          <span>${escapeHTML(item.phone)}</span>
+        </div>
+        <div class="recent-item-meta">
+          <span class="status status-${escapeHTML(item.status)}">
+            ${escapeHTML(STATUS_LABELS[item.status] || item.status || "نامشخص")}
+          </span>
+          <small>${escapeHTML(formatDate(item.created_at))}</small>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function getFilteredRequests() {
+    const searchTerm = (searchInput?.value || "").trim().toLocaleLowerCase();
+    const selectedStatus = statusFilter?.value || "";
+
+    return requests.filter((item) => {
+      const matchesStatus =
+        !selectedStatus || item.status === selectedStatus;
+
+      const searchableText = [
+        item.name,
+        item.phone,
+        item.grade,
+        item.service,
+        item.message
+      ].join(" ").toLocaleLowerCase();
+
+      const matchesSearch =
+        !searchTerm || searchableText.includes(searchTerm);
+
+      return matchesStatus && matchesSearch;
+    });
+  }
+
+  function renderRequests() {
+    if (!table) return;
+
+    const filtered = getFilteredRequests();
+
+    if (!filtered.length) {
+      table.innerHTML = `
+        <tr>
+          <td colspan="7" class="empty-state">
+            درخواستی با این مشخصات پیدا نشد.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    table.innerHTML = filtered.map((item) => {
+      const id = Number(item.id);
+
+      const statusOptions = VALID_STATUSES.map((status) => `
+        <option value="${status}"
+          ${item.status === status ? "selected" : ""}>
+          ${STATUS_LABELS[status]}
+        </option>
+      `).join("");
+
+      return `
+        <tr data-request-id="${id}">
+          <td>${id}</td>
+          <td>
+            <strong>${escapeHTML(item.name)}</strong>
+            <div class="muted">${escapeHTML(item.phone)}</div>
+          </td>
+          <td>${escapeHTML(item.grade || "—")}</td>
+          <td>${escapeHTML(item.service || "—")}</td>
+          <td>
+            <div class="request-message">
+              ${escapeHTML(item.message || "—")}
+            </div>
+          </td>
+          <td>
+            <select
+              class="request-status"
+              data-action="status"
+              aria-label="تغییر وضعیت درخواست ${id}">
+              ${statusOptions}
+            </select>
+          </td>
+          <td>
+            <div class="request-actions">
+              <small>${escapeHTML(formatDate(item.created_at))}</small>
+              <button
+                type="button"
+                class="danger"
+                data-action="delete"
+                aria-label="حذف درخواست ${id}">
+                حذف
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  async function loadRequests() {
+    const data = await api("/api/admin/requests");
+
+    requests = Array.isArray(data.requests)
+      ? data.requests
+      : Array.isArray(data)
+        ? data
+        : [];
+
+    renderRequests();
+  }
+
+  async function refreshAll() {
+    if (isLoading) return;
+
+    isLoading = true;
+
+    if (refreshButton) {
+      refreshButton.disabled = true;
+      refreshButton.textContent = "در حال بروزرسانی…";
+    }
+
+    try {
+      await Promise.all([
+        loadDashboard(),
+        loadRequests()
+      ]);
     } catch (error) {
+      showToast(error.message || "دریافت اطلاعات ناموفق بود.", "error");
+    } finally {
+      isLoading = false;
 
-        console.error(
-            "AUTH CHECK ERROR:",
-            error
-        );
+      if (refreshButton) {
+        refreshButton.disabled = false;
+        refreshButton.textContent = "بروزرسانی";
+      }
+    }
+  }
 
+  async function checkAuthentication() {
+    try {
+      const data = await api("/api/admin/me");
+
+      if (data.authenticated) {
+        showPanel();
+        ensureStatusFilter();
+        await refreshAll();
+      } else {
         showLogin();
-
+      }
+    } catch {
+      showLogin();
     }
-}
+  }
 
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
 
-loginForm.addEventListener(
-    "submit",
-    async function (event) {
+      const password = passwordInput?.value || "";
 
-        event.preventDefault();
-
-        const password =
-            passwordInput.value.trim();
-
-        if (!password) {
-
-            loginStatus.textContent =
-                "رمز عبور را وارد کنید.";
-
-            return;
-        }
-
-
-        loginStatus.textContent =
-            "در حال ورود...";
-
-
-        try {
-
-            const response =
-                await fetch(
-                    "/api/admin/login",
-                    {
-                        method: "POST",
-                        credentials: "include",
-                        headers: {
-                            "Content-Type":
-                                "application/json"
-                        },
-                        body: JSON.stringify({
-                            password: password
-                        })
-                    }
-                );
-
-
-            const data =
-                await response.json();
-
-
-            console.log(
-                "LOGIN RESPONSE:",
-                data
-            );
-
-
-            if (!response.ok) {
-
-                loginStatus.textContent =
-                    data.error ||
-                    "ورود ناموفق بود.";
-
-                return;
-            }
-
-
-            if (data.ok !== true) {
-
-                loginStatus.textContent =
-                    "ورود تأیید نشد.";
-
-                return;
-            }
-
-
-            loginStatus.textContent =
-                "ورود موفق بود. در حال باز کردن پنل...";
-
-
-            /*
-             * دوباره Session را از سرور
-             * بررسی می‌کنیم.
-             */
-
-            const authResponse =
-                await fetch(
-                    "/api/admin/me",
-                    {
-                        method: "GET",
-                        credentials: "include",
-                        cache: "no-store"
-                    }
-                );
-
-
-            const authData =
-                await authResponse.json();
-
-
-            console.log(
-                "AUTH AFTER LOGIN:",
-                authData
-            );
-
-
-            if (
-                authData.authenticated === true
-            ) {
-
-                showPanel();
-
-                await loadRequests();
-
-            } else {
-
-                loginStatus.textContent =
-                    "Session ایجاد نشد.";
-
-            }
-
-        } catch (error) {
-
-            console.error(
-                "LOGIN ERROR:",
-                error
-            );
-
-            loginStatus.textContent =
-                "ارتباط با سرور برقرار نشد.";
-
-        }
-
-    }
-);
-
-
-logoutButton.addEventListener(
-    "click",
-    async function () {
-
-        try {
-
-            await fetch(
-                "/api/admin/logout",
-                {
-                    method: "POST",
-                    credentials: "include"
-                }
-            );
-
-        } catch (error) {
-
-            console.error(
-                "LOGOUT ERROR:",
-                error
-            );
-
-        }
-
-
-        showLogin();
-
-        table.innerHTML = "";
-
-        loginStatus.textContent = "";
-
-    }
-);
-
-
-refreshButton.addEventListener(
-    "click",
-    loadRequests
-);
-
-
-async function loadRequests() {
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/admin/requests",
-                {
-                    method: "GET",
-                    credentials: "include",
-                    cache: "no-store"
-                }
-            );
-
-
-        if (response.status === 401) {
-
-            showLogin();
-
-            return;
-        }
-
-
-        if (!response.ok) {
-
-            table.innerHTML =
-                "<p>خطا در دریافت درخواست‌ها.</p>";
-
-            return;
-        }
-
-
-        const requests =
-            await response.json();
-
-
-        if (
-            !Array.isArray(requests) ||
-            requests.length === 0
-        ) {
-
-            table.innerHTML =
-                "<p>هنوز درخواستی ثبت نشده است.</p>";
-
-            return;
-        }
-
-
-        table.innerHTML = `
-
-            <table>
-
-                <thead>
-
-                    <tr>
-
-                        <th>کد</th>
-                        <th>نام</th>
-                        <th>تماس</th>
-                        <th>پایه</th>
-                        <th>خدمت</th>
-                        <th>توضیحات</th>
-                        <th>وضعیت</th>
-                        <th>تاریخ</th>
-                        <th></th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    ${requests.map(function (item) {
-
-                        return `
-
-                            <tr>
-
-                                <td>
-                                    ${esc(item.id)}
-                                </td>
-
-                                <td>
-                                    ${esc(item.name)}
-                                </td>
-
-                                <td>
-                                    ${esc(item.phone)}
-                                </td>
-
-                                <td>
-                                    ${esc(
-                                        item.grade || "-"
-                                    )}
-                                </td>
-
-                                <td>
-                                    ${esc(
-                                        item.service || "-"
-                                    )}
-                                </td>
-
-                                <td>
-                                    ${esc(
-                                        item.message || "-"
-                                    )}
-                                </td>
-
-                                <td>
-
-                                    <select
-                                        class="status"
-                                        onchange="
-                                            updateStatus(
-                                                ${Number(item.id)},
-                                                this.value
-                                            )
-                                        "
-                                    >
-
-                                        <option
-                                            value="new"
-                                            ${
-                                                item.status === "new"
-                                                    ? "selected"
-                                                    : ""
-                                            }
-                                        >
-                                            جدید
-                                        </option>
-
-
-                                        <option
-                                            value="contacted"
-                                            ${
-                                                item.status === "contacted"
-                                                    ? "selected"
-                                                    : ""
-                                            }
-                                        >
-                                            تماس گرفته شد
-                                        </option>
-
-
-                                        <option
-                                            value="done"
-                                            ${
-                                                item.status === "done"
-                                                    ? "selected"
-                                                    : ""
-                                            }
-                                        >
-                                            انجام شد
-                                        </option>
-
-
-                                        <option
-                                            value="cancelled"
-                                            ${
-                                                item.status === "cancelled"
-                                                    ? "selected"
-                                                    : ""
-                                            }
-                                        >
-                                            لغو شد
-                                        </option>
-
-                                    </select>
-
-                                </td>
-
-
-                                <td>
-                                    ${esc(
-                                        item.created_at
-                                    )}
-                                </td>
-
-
-                                <td>
-
-                                    <button
-                                        class="danger"
-                                        onclick="
-                                            deleteRequest(
-                                                ${Number(item.id)}
-                                            )
-                                        "
-                                    >
-                                        حذف
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-                        `;
-
-                    }).join("")}
-
-                </tbody>
-
-            </table>
-
-        `;
-
-    } catch (error) {
-
-        console.error(
-            "LOAD ERROR:",
-            error
-        );
-
-        table.innerHTML =
-            "<p>ارتباط با سرور برقرار نشد.</p>";
-
-    }
-}
-
-
-async function updateStatus(
-    id,
-    status
-) {
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/admin/requests/" + id,
-                {
-                    method: "PATCH",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-                    body: JSON.stringify({
-                        status: status
-                    })
-                }
-            );
-
-
-        if (response.status === 401) {
-
-            showLogin();
-
-            return;
-        }
-
-
-        if (!response.ok) {
-
-            alert(
-                "تغییر وضعیت انجام نشد."
-            );
-
-            return;
-        }
-
-
-        await loadRequests();
-
-    } catch (error) {
-
-        console.error(
-            "STATUS ERROR:",
-            error
-        );
-
-        alert(
-            "ارتباط با سرور برقرار نشد."
-        );
-
-    }
-}
-
-
-async function deleteRequest(id) {
-
-    if (
-        !confirm(
-            "این درخواست حذف شود؟"
-        )
-    ) {
-
+      if (!password) {
+        showToast("لطفاً رمز عبور را وارد کن.", "error");
+        passwordInput?.focus();
         return;
-    }
+      }
 
+      if (loginButton) {
+        loginButton.disabled = true;
+        loginButton.textContent = "در حال ورود…";
+      }
 
-    try {
+      try {
+        await api("/api/admin/login", {
+          method: "POST",
+          body: JSON.stringify({ password })
+        });
 
-        const response =
-            await fetch(
-                "/api/admin/requests/" + id,
-                {
-                    method: "DELETE",
-                    credentials: "include"
-                }
-            );
+        if (passwordInput) passwordInput.value = "";
 
+        showPanel();
+        ensureStatusFilter();
 
-        if (response.status === 401) {
+        await refreshAll();
 
-            showLogin();
-
-            return;
+        showToast("با موفقیت وارد پنل مدیریت شدی.");
+      } catch (error) {
+        if (loginStatus) {
+          loginStatus.textContent =
+            error.message || "ورود انجام نشد.";
+        } else {
+          showToast(error.message || "ورود انجام نشد.", "error");
         }
-
-
-        if (!response.ok) {
-
-            alert(
-                "حذف درخواست انجام نشد."
-            );
-
-            return;
+      } finally {
+        if (loginButton) {
+          loginButton.disabled = false;
+          loginButton.textContent = "ورود به پنل";
         }
+      }
+    });
+  }
 
+  if (logoutButton) {
+    logoutButton.addEventListener("click", async () => {
+      try {
+        await api("/api/admin/logout", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+      } catch {
+        // حتی در صورت خطا، صفحه ورود نمایش داده می‌شود.
+      }
 
-        await loadRequests();
+      requests = [];
+      showLogin("از پنل مدیریت خارج شدی.");
+    });
+  }
 
-    } catch (error) {
+  if (refreshButton) {
+    refreshButton.addEventListener("click", refreshAll);
+  }
 
-        console.error(
-            "DELETE ERROR:",
-            error
-        );
+  if (searchInput) {
+    searchInput.addEventListener("input", renderRequests);
+  }
 
-        alert(
-            "ارتباط با سرور برقرار نشد."
-        );
+  if (statusFilter) {
+    statusFilter.addEventListener("change", renderRequests);
+  }
 
-    }
-}
+  if (table) {
+    table.addEventListener("change", async (event) => {
+      const select = event.target.closest(
+        'select[data-action="status"]'
+      );
 
+      if (!select) return;
 
-function esc(value) {
+      const row = select.closest("tr");
+      const id = Number(row?.dataset.requestId);
+      const status = select.value;
 
-    return String(value).replace(
-        /[&<>"']/g,
-        function (character) {
+      if (!Number.isInteger(id) || id < 1) return;
 
-            return {
+      if (!VALID_STATUSES.includes(status)) {
+        showToast("وضعیت انتخاب‌شده معتبر نیست.", "error");
+        return;
+      }
 
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#039;"
+      select.disabled = true;
 
-            }[character];
+      try {
+        await api(`/api/admin/requests/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status })
+        });
 
-        }
-    );
+        const request = requests.find((item) => Number(item.id) === id);
 
-}
+        if (request) request.status = status;
 
+        renderRequests();
+        await loadDashboard();
 
-/*
- * برای onchange و onclick داخل HTML
- */
+        showToast("وضعیت درخواست تغییر کرد.");
+      } catch (error) {
+        showToast(error.message || "تغییر وضعیت انجام نشد.", "error");
+        await loadRequests().catch(() => {});
+      } finally {
+        select.disabled = false;
+      }
+    });
 
-window.updateStatus =
-    updateStatus;
+    table.addEventListener("click", async (event) => {
+      const button = event.target.closest(
+        'button[data-action="delete"]'
+      );
 
-window.deleteRequest =
-    deleteRequest;
+      if (!button) return;
 
+      const row = button.closest("tr");
+      const id = Number(row?.dataset.requestId);
 
-/*
- * شروع برنامه
- */
+      if (!Number.isInteger(id) || id < 1) return;
 
-checkAuthentication();
+      if (!confirm("از حذف این درخواست مطمئنی؟ این کار قابل بازگشت نیست.")) {
+        return;
+      }
+
+      button.disabled = true;
+
+      try {
+        await api(`/api/admin/requests/${id}`, {
+          method: "DELETE"
+        });
+
+        requests = requests.filter((item) => Number(item.id) !== id);
+
+        renderRequests();
+        await loadDashboard();
+
+        showToast("درخواست حذف شد.");
+      } catch (error) {
+        showToast(error.message || "حذف درخواست انجام نشد.", "error");
+        await loadRequests().catch(() => {});
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+
+  // بخش‌هایی که نیاز به اطلاعات سرور دارند، در زمان باز شدن تازه‌سازی می‌شوند.
+  document.querySelectorAll("[data-section]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.dataset.section === "dashboard") {
+        refreshAll();
+      }
+
+      if (button.dataset.section === "requests") {
+        loadRequests().catch((error) => {
+          showToast(error.message || "دریافت درخواست‌ها ناموفق بود.", "error");
+        });
+      }
+    });
+  });
+
+  ensureStatusFilter();
+  checkAuthentication();
+})();
