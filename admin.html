@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b0e13">
   <meta name="robots" content="noindex, nofollow">
+
   <title>مرکز مدیریت زیوری</title>
 
   <style>
@@ -21,7 +22,6 @@
       --green: #43d6a0;
       --blue: #72b3ff;
       --red: #ff7777;
-      --purple: #c0a0ff;
       --radius: 17px;
     }
 
@@ -31,6 +31,11 @@
 
     [hidden] {
       display: none !important;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
     }
 
     body {
@@ -43,7 +48,10 @@
       line-height: 1.8;
     }
 
-    button, input, select, textarea {
+    button,
+    input,
+    select,
+    textarea {
       font: inherit;
     }
 
@@ -66,6 +74,8 @@
     .muted {
       color: var(--muted);
     }
+
+    /* فرم ورود */
 
     .center {
       min-height: 100vh;
@@ -159,8 +169,11 @@
       font-size: 12px;
     }
 
+    /* ساختار پنل */
+
     #panel {
       min-height: 100vh;
+      background: var(--bg);
     }
 
     .sidebar {
@@ -296,6 +309,8 @@
       margin-right: 250px;
     }
 
+    /* نوار بالایی */
+
     .topbar {
       position: sticky;
       z-index: 10;
@@ -347,6 +362,8 @@
       background: #d4af3720;
     }
 
+    /* محتوای صفحات */
+
     .content {
       max-width: 1550px;
       margin: auto;
@@ -392,6 +409,8 @@
       font-size: 115px;
       line-height: 1;
     }
+
+    /* کارت‌های آماری */
 
     .stats {
       display: grid;
@@ -455,6 +474,8 @@
       font-size: 10px;
     }
 
+    /* کارت‌ها */
+
     .card {
       margin-bottom: 22px;
       overflow: hidden;
@@ -498,6 +519,8 @@
       font-size: 12px;
     }
 
+    /* جست‌وجو و فیلتر */
+
     .toolbar {
       display: flex;
       gap: 12px;
@@ -540,6 +563,8 @@
       background: var(--bg);
       color: var(--text);
     }
+
+    /* جدول درخواست‌ها */
 
     .table-wrap {
       width: 100%;
@@ -593,6 +618,8 @@
       border-color: var(--gold);
     }
 
+    /* آخرین درخواست‌ها */
+
     .recent-list {
       padding: 7px 22px;
     }
@@ -629,6 +656,8 @@
       white-space: nowrap;
     }
 
+    /* پیام‌های خالی */
+
     .empty {
       padding: 36px 15px;
       color: var(--muted);
@@ -647,6 +676,8 @@
       min-width: 0;
     }
 
+    /* پابرگ */
+
     .footer {
       display: flex;
       justify-content: space-between;
@@ -660,6 +691,8 @@
     .footer span:last-child {
       color: var(--gold);
     }
+
+    /* پیام موقت */
 
     .toast {
       position: fixed;
@@ -675,11 +708,15 @@
       box-shadow: 0 10px 40px #0007;
     }
 
+    /* نمایشگر متوسط */
+
     @media (max-width: 1150px) {
       .stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
+
+    /* موبایل و تبلت */
 
     @media (max-width: 760px) {
       .sidebar {
@@ -828,10 +865,13 @@
 
 <body>
 
+  <!-- فرم ورود -->
   <div id="login" class="center">
     <form id="lf" class="box" autocomplete="on">
       <div class="logo">Z</div>
+
       <p class="brand-caption">ZIVARI CONSULTING</p>
+
       <h2>پنل مدیریت زیوری</h2>
 
       <p class="description">
@@ -857,10 +897,13 @@
     </form>
   </div>
 
+  <!-- پنل مدیریت؛ پس از تأیید نشست توسط سرور نمایش داده می‌شود -->
   <div id="panel" hidden>
+
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-logo">Z</div>
+
         <div>
           <strong>زیوری</strong>
           <small>مرکز مدیریت مشاوره</small>
@@ -870,36 +913,62 @@
       <div class="menu-title">مدیریت مجموعه</div>
 
       <nav class="nav" aria-label="منوی اصلی">
-        <button class="nav-item active" type="button" data-section="dashboard">
+
+        <button
+          class="nav-item active"
+          type="button"
+          data-section="dashboard"
+        >
           <span class="nav-icon">▦</span>
           داشبورد
         </button>
 
-        <button class="nav-item" type="button" data-section="requests">
+        <button
+          class="nav-item"
+          type="button"
+          data-section="requests"
+        >
           <span class="nav-icon">▤</span>
           درخواست‌ها
           <span id="newBadge" class="nav-badge" hidden>۰</span>
         </button>
 
-        <button class="nav-item" type="button" data-section="followups">
+        <button
+          class="nav-item"
+          type="button"
+          data-section="followups"
+        >
           <span class="nav-icon">◷</span>
           پیگیری مراجعان
         </button>
 
-        <button class="nav-item" type="button" data-section="students">
+        <button
+          class="nav-item"
+          type="button"
+          data-section="students"
+        >
           <span class="nav-icon">♙</span>
           پرونده دانش‌آموزان
         </button>
 
-        <button class="nav-item" type="button" data-section="appointments">
+        <button
+          class="nav-item"
+          type="button"
+          data-section="appointments"
+        >
           <span class="nav-icon">▦</span>
           جلسات مشاوره
         </button>
 
-        <button class="nav-item" type="button" data-section="reports">
+        <button
+          class="nav-item"
+          type="button"
+          data-section="reports"
+        >
           <span class="nav-icon">▥</span>
           گزارش‌ها
         </button>
+
       </nav>
 
       <div class="sidebar-bottom">
@@ -915,6 +984,8 @@
     </aside>
 
     <div class="workspace">
+
+      <!-- نوار بالایی -->
       <header class="topbar">
         <div>
           <small>ZIVARI / MANAGEMENT CENTER</small>
@@ -923,6 +994,7 @@
 
         <div class="top-actions">
           <span class="online">● پنل مدیریت</span>
+
           <button type="button" id="ref" class="refresh-btn">
             ↻ به‌روزرسانی
           </button>
@@ -930,26 +1002,37 @@
       </header>
 
       <main class="content">
+
+        <!-- داشبورد -->
         <section id="dashboardSection" class="page-section">
+
           <div class="hero">
             <div>
               <small>WELCOME TO ZIVARI</small>
+
               <h2>به مرکز مدیریت زیوری خوش آمدی ✦</h2>
+
               <p>
                 درخواست‌های مشاوره، وضعیت پیگیری‌ها و فعالیت‌های مجموعه را مدیریت کن.
               </p>
             </div>
+
             <div class="hero-mark" aria-hidden="true">Z</div>
           </div>
 
           <div class="stats">
+
             <article class="stat">
               <div class="stat-head">
                 <span>کل درخواست‌ها</span>
                 <span class="stat-icon">▤</span>
               </div>
+
               <strong id="totalCount" class="stat-number">—</strong>
-              <span class="stat-caption">تمام درخواست‌های ثبت‌شده</span>
+
+              <span class="stat-caption">
+                تمام درخواست‌های ثبت‌شده
+              </span>
             </article>
 
             <article class="stat">
@@ -957,8 +1040,12 @@
                 <span>درخواست‌های جدید</span>
                 <span class="stat-icon">✦</span>
               </div>
+
               <strong id="newCount" class="stat-number">—</strong>
-              <span class="stat-caption">نیازمند بررسی اولیه</span>
+
+              <span class="stat-caption">
+                نیازمند بررسی اولیه
+              </span>
             </article>
 
             <article class="stat">
@@ -966,8 +1053,12 @@
                 <span>در حال پیگیری</span>
                 <span class="stat-icon blue">◷</span>
               </div>
+
               <strong id="pendingCount" class="stat-number">—</strong>
-              <span class="stat-caption">درخواست‌های در جریان</span>
+
+              <span class="stat-caption">
+                درخواست‌های در جریان
+              </span>
             </article>
 
             <article class="stat">
@@ -975,9 +1066,14 @@
                 <span>تکمیل‌شده</span>
                 <span class="stat-icon green">✓</span>
               </div>
+
               <strong id="completedCount" class="stat-number">—</strong>
-              <span class="stat-caption">پرونده‌های تکمیل‌شده</span>
+
+              <span class="stat-caption">
+                پرونده‌های تکمیل‌شده
+              </span>
             </article>
+
           </div>
 
           <section class="card">
@@ -986,27 +1082,41 @@
                 <h2>آخرین درخواست‌ها</h2>
                 <p>آخرین درخواست‌های ثبت‌شده در سایت</p>
               </div>
-              <button type="button" class="secondary-btn" data-section="requests">
+
+              <button
+                type="button"
+                class="secondary-btn"
+                data-section="requests"
+              >
                 مشاهده همه
               </button>
             </div>
 
             <div id="recentRequests" class="recent-list">
-              <div class="empty">در حال دریافت درخواست‌ها...</div>
+              <div class="empty">
+                در حال دریافت درخواست‌ها...
+              </div>
             </div>
           </section>
+
         </section>
 
+        <!-- درخواست‌ها -->
         <section id="requestsSection" class="page-section" hidden>
+
           <div class="section-intro">
             <h2>درخواست‌های مشاوره</h2>
-            <p>درخواست‌ها را جست‌وجو کن و وضعیت آن‌ها را مدیریت کن.</p>
+            <p>
+              درخواست‌ها را جست‌وجو کن و وضعیت آن‌ها را مدیریت کن.
+            </p>
           </div>
 
           <section class="card">
+
             <div class="toolbar">
               <div class="search">
                 <span>⌕</span>
+
                 <input
                   id="searchRequests"
                   type="search"
@@ -1025,132 +1135,120 @@
             </div>
 
             <div id="table">
-              <div class="empty">در حال آماده‌سازی درخواست‌ها...</div>
+              <div class="empty">
+                در حال آماده‌سازی درخواست‌ها...
+              </div>
             </div>
+
           </section>
         </section>
 
+        <!-- پیگیری‌ها -->
         <section id="followupsSection" class="page-section" hidden>
+
           <div class="section-intro">
             <h2>پیگیری مراجعان</h2>
-            <p>درخواست‌هایی که نیاز به تماس یا پیگیری مجدد دارند.</p>
+            <p>
+              درخواست‌هایی که نیاز به تماس یا پیگیری مجدد دارند.
+            </p>
           </div>
 
           <section class="card">
             <div class="card-head">
               <div>
                 <h2>فهرست پیگیری‌ها</h2>
-                <p>درخواست‌های در حال پیگیری را از بخش درخواست‌ها مشخص کن.</p>
+                <p>
+                  درخواست‌های در حال پیگیری را از بخش درخواست‌ها مشخص کن.
+                </p>
               </div>
             </div>
+
             <div class="empty">
               <strong>◷</strong>
               این بخش در نسخه فعلی نمای اختصاصی ندارد.
             </div>
           </section>
+
         </section>
 
+        <!-- پرونده دانش‌آموزان -->
         <section id="studentsSection" class="page-section" hidden>
+
           <div class="section-intro">
             <h2>پرونده دانش‌آموزان</h2>
-            <p>محیط اختصاصی برای مدیریت اطلاعات تحصیلی مراجعان.</p>
+            <p>
+              محیط اختصاصی برای مدیریت اطلاعات تحصیلی مراجعان.
+            </p>
           </div>
+
           <section class="card">
             <div class="empty">
               <strong>♙</strong>
               این بخش هنوز به پایگاه داده متصل نشده است.
             </div>
           </section>
+
         </section>
 
+        <!-- جلسات مشاوره -->
         <section id="appointmentsSection" class="page-section" hidden>
+
           <div class="section-intro">
             <h2>جلسات مشاوره</h2>
-            <p>فضای مدیریت و برنامه‌ریزی جلسات مشاوره.</p>
+            <p>
+              فضای مدیریت و برنامه‌ریزی جلسات مشاوره.
+            </p>
           </div>
+
           <section class="card">
             <div class="empty">
               <strong>▦</strong>
               تقویم جلسات هنوز به پایگاه داده متصل نشده است.
             </div>
           </section>
+
         </section>
 
+        <!-- گزارش‌ها -->
         <section id="reportsSection" class="page-section" hidden>
+
           <div class="section-intro">
             <h2>گزارش‌های مدیریتی</h2>
-            <p>نمای کلی از عملکرد و درخواست‌های مجموعه.</p>
+            <p>
+              نمای کلی از عملکرد و درخواست‌های مجموعه.
+            </p>
           </div>
+
           <section class="card">
             <div class="empty">
               <strong>▥</strong>
               آمار کلی در داشبورد قابل مشاهده است.
             </div>
           </section>
+
         </section>
 
+        <!-- پابرگ -->
         <footer class="footer">
           <span>زیوری | مرکز مدیریت مشاوره</span>
           <span>پیشرفت همراه با آرامش ✦</span>
         </footer>
+
       </main>
     </div>
   </div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <!-- پیام‌های وضعیت -->
+  <div
+    id="toast"
+    class="toast"
+    role="status"
+    aria-live="polite"
+    hidden
+  ></div>
 
-  <script src="/admin.js"></script>
+  <!-- فقط یک فایل اسکریپت برای مدیریت پنل -->
+  <script src="/admin.js?v=2"></script>
 
-  <script>
-    (() => {
-      "use strict";
-
-      const sections = {
-        dashboard: "dashboardSection",
-        requests: "requestsSection",
-        followups: "followupsSection",
-        students: "studentsSection",
-        appointments: "appointmentsSection",
-        reports: "reportsSection"
-      };
-
-      const titles = {
-        dashboard: "داشبورد مدیریت",
-        requests: "درخواست‌های مشاوره",
-        followups: "پیگیری مراجعان",
-        students: "پرونده دانش‌آموزان",
-        appointments: "جلسات مشاوره",
-        reports: "گزارش‌های مدیریتی"
-      };
-
-      document.addEventListener("click", (event) => {
-        const button = event.target.closest("[data-section]");
-        if (!button) return;
-
-        const name = button.dataset.section;
-        if (!sections[name]) return;
-
-        Object.values(sections).forEach((id) => {
-          const section = document.getElementById(id);
-          if (section) section.hidden = true;
-        });
-
-        const selected = document.getElementById(sections[name]);
-        if (selected) selected.hidden = false;
-
-        document.querySelectorAll(".nav-item").forEach((item) => {
-          item.classList.toggle(
-            "active",
-            item.dataset.section === name
-          );
-        });
-
-        const title = document.getElementById("pageTitle");
-        if (title) title.textContent = titles[name];
-
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      });
-    })();
-  </script>
 </body>
 </html>
