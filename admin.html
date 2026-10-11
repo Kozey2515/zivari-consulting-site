@@ -1,1254 +1,514 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b0e13">
-  <meta name="robots" content="noindex, nofollow">
-
-  <title>مرکز مدیریت زیوری</title>
-
-  <style>
-    :root {
-      --bg: #0b0e13;
-      --sidebar: #10141b;
-      --card: #151a23;
-      --card2: #1a202b;
-      --border: #2b3340;
-      --gold: #d4af37;
-      --gold2: #f3d978;
-      --text: #f3f4f6;
-      --muted: #98a2b3;
-      --green: #43d6a0;
-      --blue: #72b3ff;
-      --red: #ff7777;
-      --radius: 17px;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    [hidden] {
-      display: none !important;
-    }
-
-    html {
-      min-height: 100%;
-      background: var(--bg);
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Tahoma, Arial, sans-serif;
-      font-size: 14px;
-      line-height: 1.8;
-    }
-
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    button:disabled {
-      opacity: .55;
-      cursor: wait;
-    }
-
-    button:focus-visible,
-    input:focus-visible,
-    select:focus-visible {
-      outline: 2px solid var(--gold);
-      outline-offset: 2px;
-    }
-
-    .muted {
-      color: var(--muted);
-    }
-
-    /* فرم ورود */
-
-    .center {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 22px;
-      background:
-        radial-gradient(ellipse at top, #282315 0%, transparent 48%),
-        var(--bg);
-    }
-
-    .box {
-      width: 100%;
-      max-width: 420px;
-      padding: 34px;
-      border: 1px solid #574923;
-      border-radius: 23px;
-      background: var(--card);
-      box-shadow: 0 25px 80px #0008;
-    }
-
-    .logo {
-      display: grid;
-      place-items: center;
-      width: 65px;
-      height: 65px;
-      margin: 0 auto 15px;
-      border: 1px solid var(--gold);
-      border-radius: 20px;
-      color: var(--gold);
-      background: #d4af3712;
-      font-family: Georgia, serif;
-      font-size: 35px;
-      font-weight: bold;
-    }
-
-    .brand-caption {
-      margin: 0;
-      color: var(--gold);
-      text-align: center;
-      letter-spacing: 3px;
-      font-size: 10px;
-    }
-
-    .box h2 {
-      margin: 8px 0;
-      text-align: center;
-      font-size: 23px;
-    }
-
-    .description {
-      margin: 0 0 25px;
-      color: var(--muted);
-      text-align: center;
-      font-size: 12px;
-    }
-
-    .box label {
-      display: block;
-      margin-bottom: 7px;
-    }
-
-    .box input {
-      width: 100%;
-      padding: 13px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    .primary-btn {
-      width: 100%;
-      margin-top: 15px;
-      padding: 12px;
-      border: 0;
-      border-radius: 10px;
-      background: var(--gold);
-      color: #151515;
-      font-weight: bold;
-    }
-
-    .primary-btn:hover {
-      background: var(--gold2);
-    }
-
-    #ls {
-      min-height: 24px;
-      margin-bottom: 0;
-      color: var(--red);
-      font-size: 12px;
-    }
-
-    /* ساختار پنل */
-
-    #panel {
-      min-height: 100vh;
-      background: var(--bg);
-    }
-
-    .sidebar {
-      position: fixed;
-      z-index: 20;
-      inset: 0 0 0 auto;
-      display: flex;
-      flex-direction: column;
-      width: 250px;
-      padding: 23px 15px;
-      overflow-y: auto;
-      border-left: 1px solid var(--border);
-      background: var(--sidebar);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 0 8px 24px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .brand-logo {
-      display: grid;
-      place-items: center;
-      width: 46px;
-      height: 46px;
-      border: 1px solid var(--gold);
-      border-radius: 14px;
-      color: var(--gold);
-      font-family: Georgia, serif;
-      font-size: 25px;
-    }
-
-    .brand strong {
-      display: block;
-      color: var(--gold);
-      font-size: 20px;
-    }
-
-    .brand small {
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .menu-title {
-      margin: 23px 10px 9px;
-      color: #778293;
-      font-size: 11px;
-    }
-
-    .nav {
-      display: grid;
-      gap: 6px;
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      width: 100%;
-      min-height: 45px;
-      padding: 10px 12px;
-      border: 1px solid transparent;
-      border-radius: 10px;
-      background: transparent;
-      color: #c2cad5;
-      text-align: right;
-      transition: .2s;
-    }
-
-    .nav-item:hover {
-      background: var(--card);
-    }
-
-    .nav-item.active {
-      border-color: #d4af3735;
-      background: #d4af3715;
-      color: var(--gold);
-    }
-
-    .nav-icon {
-      width: 23px;
-      color: var(--gold);
-      text-align: center;
-      font-size: 18px;
-    }
-
-    .nav-badge {
-      margin-right: auto;
-      padding: 0 7px;
-      border-radius: 20px;
-      background: var(--gold);
-      color: #151515;
-      font-size: 10px;
-    }
-
-    .sidebar-bottom {
-      margin-top: auto;
-      padding-top: 25px;
-    }
-
-    .sidebar-note {
-      padding: 14px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--card);
-    }
-
-    .sidebar-note strong {
-      color: var(--gold);
-    }
-
-    .sidebar-note p {
-      margin: 2px 0 0;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .logout {
-      width: 100%;
-      margin-top: 12px;
-      padding: 10px;
-      border: 1px solid #ff777733;
-      border-radius: 10px;
-      background: #ff77770b;
-      color: #ff9999;
-    }
-
-    .workspace {
-      min-height: 100vh;
-      margin-right: 250px;
-    }
-
-    /* نوار بالایی */
-
-    .topbar {
-      position: sticky;
-      z-index: 10;
-      top: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      min-height: 94px;
-      padding: 18px 30px;
-      border-bottom: 1px solid var(--border);
-      background: #0b0e13ed;
-      backdrop-filter: blur(15px);
-    }
-
-    .topbar small {
-      color: var(--gold);
-      letter-spacing: 1px;
-      font-size: 10px;
-    }
-
-    .topbar h1 {
-      margin: 3px 0 0;
-      font-size: 21px;
-    }
-
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .online {
-      color: var(--green);
-      font-size: 11px;
-    }
-
-    .refresh-btn,
-    .secondary-btn {
-      padding: 9px 13px;
-      border: 1px solid #d4af3755;
-      border-radius: 9px;
-      background: #d4af3710;
-      color: var(--gold);
-    }
-
-    .refresh-btn:hover,
-    .secondary-btn:hover {
-      background: #d4af3720;
-    }
-
-    /* محتوای صفحات */
-
-    .content {
-      max-width: 1550px;
-      margin: auto;
-      padding: 28px;
-    }
-
-    .hero {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-      overflow: hidden;
-      padding: 29px;
-      border: 1px solid #d4af3740;
-      border-radius: var(--radius);
-      background:
-        radial-gradient(circle at 90% 20%, #d4af3720, transparent 45%),
-        linear-gradient(120deg, #1b2029, #141820);
-    }
-
-    .hero small {
-      color: var(--gold);
-      letter-spacing: 2px;
-      font-size: 10px;
-    }
-
-    .hero h2 {
-      margin: 8px 0;
-      font-size: 23px;
-    }
-
-    .hero p {
-      max-width: 650px;
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .hero-mark {
-      color: #d4af3727;
-      font-family: Georgia, serif;
-      font-size: 115px;
-      line-height: 1;
-    }
-
-    /* کارت‌های آماری */
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 15px;
-      margin: 22px 0;
-    }
-
-    .stat {
-      padding: 20px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: var(--card);
-      transition: .2s;
-    }
-
-    .stat:hover {
-      border-color: #d4af3760;
-      transform: translateY(-2px);
-    }
-
-    .stat-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .stat-icon {
-      display: grid;
-      place-items: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: #d4af3715;
-      color: var(--gold);
-      font-size: 18px;
-    }
-
-    .stat-icon.green {
-      background: #43d6a015;
-      color: var(--green);
-    }
-
-    .stat-icon.blue {
-      background: #72b3ff15;
-      color: var(--blue);
-    }
-
-    .stat-number {
-      display: block;
-      margin: 12px 0 0;
-      font-size: 32px;
-      line-height: 1.5;
-    }
-
-    .stat-caption {
-      color: #8792a1;
-      font-size: 10px;
-    }
-
-    /* کارت‌ها */
-
-    .card {
-      margin-bottom: 22px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--card);
-    }
-
-    .card-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 21px 23px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .card-head h2 {
-      margin: 0;
-      font-size: 16px;
-    }
-
-    .card-head p {
-      margin: 4px 0 0;
-      color: var(--muted);
-      font-size: 11px;
-    }
-
-    .section-intro {
-      margin-bottom: 22px;
-    }
-
-    .section-intro h2 {
-      margin: 0 0 5px;
-      font-size: 23px;
-    }
-
-    .section-intro p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    /* جست‌وجو و فیلتر */
-
-    .toolbar {
-      display: flex;
-      gap: 12px;
-      padding: 18px 22px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .search {
-      display: flex;
-      align-items: center;
-      flex: 1;
-      gap: 10px;
-      min-width: 0;
-      padding: 0 12px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--bg);
-    }
-
-    .search span {
-      color: var(--gold);
-      font-size: 21px;
-    }
-
-    .search input {
-      width: 100%;
-      min-width: 0;
-      padding: 12px 0;
-      border: 0;
-      outline: none;
-      background: transparent;
-      color: var(--text);
-    }
-
-    select {
-      min-height: 44px;
-      padding: 8px 12px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    /* جدول درخواست‌ها */
-
-    .table-wrap {
-      width: 100%;
-      overflow-x: auto;
-    }
-
-    .table-wrap table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: right;
-    }
-
-    .table-wrap th {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border);
-      background: #1b212b;
-      color: #b2bbc7;
-      font-size: 11px;
-      font-weight: normal;
-      white-space: nowrap;
-    }
-
-    .table-wrap td {
-      padding: 14px 16px;
-      border-bottom: 1px solid #2b334080;
-      color: #e1e5eb;
-      font-size: 12px;
-      vertical-align: middle;
-    }
-
-    .table-wrap tbody tr:hover {
-      background: #ffffff04;
-    }
-
-    .table-wrap button,
-    .table-wrap select {
-      max-width: 100%;
-      margin: 2px;
-      padding: 5px 8px;
-      font-size: 11px;
-    }
-
-    .table-wrap button {
-      border: 1px solid var(--border);
-      border-radius: 7px;
-      background: var(--card2);
-      color: var(--text);
-    }
-
-    .table-wrap button:hover {
-      border-color: var(--gold);
-    }
-
-    /* آخرین درخواست‌ها */
-
-    .recent-list {
-      padding: 7px 22px;
-    }
-
-    .recent-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      padding: 15px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .recent-item:last-child {
-      border-bottom: 0;
-    }
-
-    .recent-item strong {
-      display: block;
-      font-size: 12px;
-    }
-
-    .recent-item small {
-      color: var(--muted);
-      font-size: 10px;
-    }
-
-    .status-pill {
-      padding: 4px 9px;
-      border: 1px solid #d4af3740;
-      border-radius: 20px;
-      color: var(--gold);
-      font-size: 10px;
-      white-space: nowrap;
-    }
-
-    /* پیام‌های خالی */
-
-    .empty {
-      padding: 36px 15px;
-      color: var(--muted);
-      text-align: center;
-      font-size: 12px;
-    }
-
-    .empty strong {
-      display: block;
-      margin-bottom: 5px;
-      color: var(--gold);
-      font-size: 30px;
-    }
-
-    .page-section {
-      min-width: 0;
-    }
-
-    /* پابرگ */
-
-    .footer {
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 23px 0 8px;
-      color: #778293;
-      font-size: 10px;
-    }
-
-    .footer span:last-child {
-      color: var(--gold);
-    }
-
-    /* پیام موقت */
-
-    .toast {
-      position: fixed;
-      z-index: 100;
-      left: 20px;
-      bottom: 20px;
-      max-width: calc(100% - 40px);
-      padding: 12px 17px;
-      border: 1px solid #d4af3755;
-      border-radius: 10px;
-      background: var(--card2);
-      color: var(--text);
-      box-shadow: 0 10px 40px #0007;
-    }
-
-    /* نمایشگر متوسط */
-
-    @media (max-width: 1150px) {
-      .stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    /* موبایل و تبلت */
-
-    @media (max-width: 760px) {
-      .sidebar {
-        position: static;
-        width: 100%;
-        padding: 14px;
-        border-left: 0;
-        border-bottom: 1px solid var(--border);
-      }
-
-      .brand {
-        padding-bottom: 13px;
-      }
-
-      .menu-title,
-      .sidebar-bottom {
-        display: none;
-      }
-
-      .nav {
-        display: flex;
-        gap: 7px;
-        margin-top: 13px;
-        overflow-x: auto;
-      }
-
-      .nav-item {
-        flex: 0 0 auto;
-        width: auto;
-        min-height: 41px;
-        white-space: nowrap;
-      }
-
-      .workspace {
-        margin-right: 0;
-      }
-
-      .topbar {
-        position: static;
-        min-height: auto;
-        padding: 15px;
-        align-items: flex-start;
-      }
-
-      .topbar h1 {
-        font-size: 16px;
-      }
-
-      .topbar small {
-        font-size: 9px;
-      }
-
-      .top-actions {
-        gap: 7px;
-      }
-
-      .online {
-        display: none;
-      }
-
-      .refresh-btn {
-        padding: 7px 9px;
-        font-size: 11px;
-        white-space: nowrap;
-      }
-
-      .content {
-        padding: 16px 12px;
-      }
-
-      .hero {
-        padding: 21px 17px;
-      }
-
-      .hero h2 {
-        font-size: 18px;
-      }
-
-      .hero p {
-        font-size: 11px;
-      }
-
-      .hero-mark {
-        font-size: 67px;
-      }
-
-      .stats {
-        gap: 10px;
-        margin: 15px 0;
-      }
-
-      .stat {
-        padding: 13px;
-      }
-
-      .stat-head {
-        font-size: 10px;
-      }
-
-      .stat-number {
-        font-size: 25px;
-      }
-
-      .toolbar {
-        flex-direction: column;
-        padding: 14px;
-      }
-
-      .toolbar select {
-        width: 100%;
-      }
-
-      .card-head {
-        padding: 16px;
-      }
-
-      .recent-list {
-        padding: 6px 15px;
-      }
-    }
-
-    @media (max-width: 380px) {
-      .stats {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-mark {
-        display: none;
-      }
-
-      .topbar {
-        flex-wrap: wrap;
-      }
-
-      .top-actions {
-        width: 100%;
-        justify-content: flex-end;
-      }
-
-      .box {
-        padding: 25px 20px;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090c11">
+<meta name="robots" content="noindex, nofollow">
+<title>مرکز مدیریت زیوری</title>
+
+<style>
+:root{color-scheme:dark;--bg:#090c11;--side:#0d1219;--card:#111720;--card2:#171f2a;--line:#273241;--gold:#d9b85c;--gold2:#f0d98d;--text:#f4f6fa;--muted:#98a5b6;--green:#4ed6a1;--blue:#79b9ff;--red:#ff777f;--r:18px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{min-height:100%;background:var(--bg);scroll-behavior:smooth}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 85% -10%,#b58c2520,transparent 34%),var(--bg);color:var(--text);font:14px/1.8 Tahoma,Arial,sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+::selection{background:#d9b85c55}
+.muted{color:var(--muted)}
+.eyebrow{color:var(--gold);font-size:10px;letter-spacing:1.6px;font-weight:bold}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 13px;border:1px solid var(--line);border-radius:11px;background:var(--card2);color:var(--text);transition:.18s}
+.btn:hover{border-color:#d9b85c80;transform:translateY(-1px)}
+.btn-gold{background:linear-gradient(135deg,#e5c96f,#bd9438);color:#15130d;font-weight:bold}
+.btn-danger{color:#ff999e;border-color:#ff777f30;background:#ff777f08}
+
+/* Login */
+.center{min-height:100vh;display:grid;place-items:center;padding:22px;background:radial-gradient(ellipse at top,#332a154d,transparent 50%)}
+.login-layout{width:min(980px,100%);display:grid;grid-template-columns:1fr 410px;gap:25px;align-items:stretch}
+.login-showcase{min-height:520px;padding:38px;border:1px solid var(--line);border-radius:28px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;background:radial-gradient(circle at 75% 30%,#d9b85c26,transparent 35%),linear-gradient(145deg,#151c26,#10151d);box-shadow:0 18px 60px #0003;position:relative}
+.login-showcase:after{content:"Z";position:absolute;left:12px;bottom:-90px;font:bold 330px/1 Georgia,serif;color:#d9b85c0b;pointer-events:none}
+.login-brand{display:flex;align-items:center;gap:14px}
+.brand-mark{width:54px;height:54px;display:grid;place-items:center;border:1px solid #d9b85c8a;border-radius:17px;color:var(--gold2);background:#d9b85c10;font:bold 28px Georgia,serif}
+.login-brand strong{display:block;font-size:21px}
+.login-brand small{color:var(--muted);font-size:11px}
+.showcase-copy{position:relative;z-index:1}
+.showcase-copy h1{margin:13px 0;font-size:clamp(27px,4vw,42px);line-height:1.55}
+.showcase-copy p{max-width:470px;color:var(--muted);line-height:2.1}
+.login-points{display:flex;flex-wrap:wrap;gap:9px;margin-top:24px}
+.login-points span{padding:7px 11px;border:1px solid var(--line);border-radius:99px;color:#c6cfda;font-size:11px}
+.box{align-self:center;width:100%;padding:32px;border:1px solid #544728;border-radius:24px;background:#111720f5;box-shadow:0 18px 60px #0003}
+.box .logo{width:60px;height:60px;display:grid;place-items:center;margin-bottom:18px;border:1px solid var(--gold);border-radius:18px;color:var(--gold2);background:#d9b85c12;font:bold 33px Georgia,serif}
+.box h2{margin:0 0 6px;font-size:23px}
+.description{margin:0 0 24px;color:var(--muted);font-size:12px}
+.field-label{display:block;margin:0 0 8px;color:#dce2ea;font-size:12px}
+.box input{width:100%;min-height:48px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#090d13;color:var(--text)}
+.primary-btn{width:100%;min-height:48px;margin-top:14px;border:0;border-radius:12px;background:linear-gradient(135deg,#e7ca72,#bf963b);color:#17140c;font-weight:bold}
+.primary-btn:hover{filter:brightness(1.07)}
+#ls{min-height:25px;margin:10px 0 0;color:var(--red);font-size:12px}
+.secure-note{padding-top:16px;border-top:1px solid #202a37;color:#6f7c8e;font-size:10px}
+
+/* Sidebar */
+#panel{min-height:100vh}
+.sidebar{position:fixed;z-index:30;inset:0 0 0 auto;width:264px;padding:22px 16px;display:flex;flex-direction:column;overflow-y:auto;background:#0d1219f5;border-left:1px solid var(--line);backdrop-filter:blur(18px)}
+.brand{display:flex;align-items:center;gap:12px;padding:3px 7px 23px;border-bottom:1px solid #202a37}
+.brand-logo{width:44px;height:44px;display:grid;place-items:center;border:1px solid #d9b85c88;border-radius:14px;color:var(--gold);font:bold 24px Georgia,serif;background:#d9b85c0b}
+.brand strong{display:block;color:var(--text);font-size:19px}
+.brand small{color:var(--muted);font-size:10px}
+.menu-title{margin:22px 10px 10px;color:#6f7c8e;font-size:10px}
+.nav{display:grid;gap:5px}
+.nav-item{position:relative;display:flex;align-items:center;gap:11px;width:100%;min-height:45px;padding:10px 12px;border:1px solid transparent;border-radius:12px;background:transparent;color:#aeb9c8;text-align:right;transition:.2s}
+.nav-item:hover{background:#ffffff06;color:var(--text)}
+.nav-item.active{border-color:#d9b85c30;background:linear-gradient(90deg,#d9b85c14,#d9b85c05);color:var(--gold2)}
+.nav-item.active:before{content:"";position:absolute;right:-1px;top:10px;bottom:10px;width:3px;border-radius:4px;background:var(--gold)}
+.nav-icon{width:24px;text-align:center;color:var(--gold);font-size:18px}
+.nav-badge{margin-right:auto;min-width:23px;padding:0 6px;border-radius:20px;background:var(--gold);color:#17140c;text-align:center;font-size:10px}
+.sidebar-bottom{margin-top:auto;padding-top:25px}
+.sidebar-note{padding:14px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(135deg,#171d27,#111720)}
+.sidebar-note strong{color:var(--gold)}
+.sidebar-note p{margin:3px 0 0;color:var(--muted);font-size:11px}
+.logout{width:100%;margin-top:10px;color:#ff999e;border-color:#ff777f30;background:#ff777f08}
+.workspace{min-height:100vh;margin-right:264px}
+
+/* Header */
+.topbar{position:sticky;z-index:20;top:0;min-height:88px;padding:17px 30px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #202a37;background:#090c11e8;backdrop-filter:blur(18px)}
+.topbar small{color:var(--gold);font-size:9px;letter-spacing:1.6px}
+.topbar h1{margin:2px 0 0;font-size:20px}
+.top-actions{display:flex;align-items:center;gap:12px}
+.online{display:inline-flex;align-items:center;gap:7px;color:var(--green);font-size:11px}
+.online:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px #4ed6a116}
+.content{max-width:1600px;margin:0 auto;padding:28px}
+.page-section{min-width:0;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Dashboard */
+.hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px;overflow:hidden;padding:30px;border:1px solid #d9b85c36;border-radius:22px;background:radial-gradient(circle at 85% 25%,#d9b85c1c,transparent 36%),linear-gradient(120deg,#171f2a,#111720)}
+.hero small{color:var(--gold);letter-spacing:1.7px;font-size:9px}
+.hero h2{margin:8px 0;font-size:clamp(19px,2.2vw,25px)}
+.hero p{max-width:670px;margin:0;color:var(--muted);font-size:12px}
+.hero-mark{color:#d9b85c20;font:120px/1 Georgia,serif;user-select:none}
+.hero-chip{display:inline-flex;align-items:center;gap:7px;margin-top:18px;padding:6px 10px;border:1px solid #4ed6a12b;border-radius:99px;color:#8ce5c1;background:#4ed6a10b;font-size:10px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin:20px 0 23px}
+.stat{position:relative;overflow:hidden;padding:19px;border:1px solid var(--line);border-radius:17px;background:linear-gradient(145deg,#141b25,#10151d);transition:transform .2s,border-color .2s}
+.stat:hover{transform:translateY(-2px);border-color:#d9b85c60}
+.stat:after{content:"";position:absolute;left:-25px;bottom:-42px;width:100px;height:100px;border-radius:50%;background:#d9b85c07;pointer-events:none}
+.stat-head{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}
+.stat-icon{display:grid;place-items:center;width:38px;height:38px;border:1px solid #d9b85c19;border-radius:12px;background:#d9b85c10;color:var(--gold);font-size:18px}
+.stat-icon.green{border-color:#4ed6a122;background:#4ed6a10d;color:var(--green)}
+.stat-icon.blue{border-color:#79b9ff22;background:#79b9ff0d;color:var(--blue)}
+.stat-number{display:block;margin:12px 0 0;font-size:31px;font-weight:700;line-height:1.5}
+.stat-caption{color:#6f7c8e;font-size:10px}
+
+/* Cards and tables */
+.card{margin-bottom:22px;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#111720;box-shadow:0 8px 30px #0000000a}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 22px;border-bottom:1px solid #202a37}
+.card-head h2{margin:0;font-size:15px}
+.card-head p{margin:3px 0 0;color:var(--muted);font-size:11px}
+.section-intro{display:flex;justify-content:space-between;align-items:end;gap:16px;margin:0 0 20px}
+.section-intro h2{margin:0 0 4px;font-size:23px}
+.section-intro p{margin:0;color:var(--muted);font-size:12px}
+.toolbar{display:flex;gap:12px;padding:17px 20px;border-bottom:1px solid #202a37}
+.search{display:flex;align-items:center;flex:1;gap:10px;min-width:0;padding:0 12px;border:1px solid var(--line);border-radius:11px;background:#090d13}
+.search span{color:var(--gold);font-size:21px}
+.search input{width:100%;min-width:0;padding:11px 0;border:0;outline:none;background:transparent;color:var(--text)}
+select{min-height:43px;padding:8px 12px;border:1px solid var(--line);border-radius:11px;background:#090d13;color:var(--text)}
+.table-wrap{width:100%;overflow-x:auto}
+.table-wrap table{width:100%;border-collapse:collapse;text-align:right}
+.table-wrap th{padding:14px 15px;border-bottom:1px solid var(--line);background:#171e28;color:#aeb9c8;font-size:11px;font-weight:normal;white-space:nowrap}
+.table-wrap td{padding:14px 15px;border-bottom:1px solid #27324180;color:#e1e6ed;font-size:12px;vertical-align:middle}
+.recent-list{padding:5px 22px}
+.recent-item{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:15px 0;border-bottom:1px solid #27324180}
+.recent-item:last-child{border-bottom:0}
+.recent-item strong{display:block;margin-bottom:3px;color:var(--text);font-size:12px}
+.recent-item small{color:var(--muted);font-size:10px}
+.status{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border:1px solid var(--line);border-radius:99px;background:#ffffff05;color:#d6deea;font-size:10px;white-space:nowrap}
+.status-new{border-color:#d9b85c35;background:#d9b85c0d;color:var(--gold2)}
+.status-contacted{border-color:#79b9ff30;background:#79b9ff0d;color:var(--blue)}
+.status-done{border-color:#4ed6a130;background:#4ed6a10d;color:var(--green)}
+.status-cancelled{border-color:#ff777f30;background:#ff777f0d;color:#ff999e}
+.empty{padding:42px 20px;color:var(--muted);text-align:center;font-size:12px}
+.empty strong{display:block;margin-bottom:5px;color:var(--gold);font-size:30px}
+.footer{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:22px 0 8px;color:#6f7c8e;font-size:10px}
+.footer span:last-child{color:var(--gold)}
+.toast{position:fixed;z-index:100;left:20px;bottom:20px;max-width:calc(100% - 40px);padding:12px 17px;border:1px solid #d9b85c55;border-radius:12px;background:#1b2430;color:var(--text);box-shadow:0 18px 60px #0003}
+
+/* Responsive */
+@media(max-width:1200px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .content{padding:23px}
+  .sidebar{width:240px}
+  .workspace{margin-right:240px}
+}
+@media(max-width:900px){
+  .login-layout{grid-template-columns:1fr;max-width:470px}
+  .login-showcase{display:none}
+  .box{align-self:auto}
+}
+@media(max-width:760px){
+  .sidebar{position:static;width:100%;padding:13px;border-left:0;border-bottom:1px solid var(--line)}
+  .brand{padding:3px 5px 13px}
+  .menu-title,.sidebar-bottom{display:none}
+  .nav{display:flex;gap:6px;margin-top:12px;overflow-x:auto;padding-bottom:2px}
+  .nav-item{flex:0 0 auto;width:auto;min-height:40px;padding:8px 10px;white-space:nowrap;font-size:11px}
+  .nav-item.active:before{right:8px;left:8px;top:auto;bottom:-2px;width:auto;height:2px}
+  .workspace{margin-right:0}
+  .topbar{position:static;min-height:auto;padding:14px;align-items:flex-start}
+  .topbar h1{font-size:16px}
+  .topbar small{font-size:8px}
+  .top-actions{gap:7px}
+  .online{display:none}
+  .refresh-btn{min-height:36px;padding:6px 9px;font-size:10px;white-space:nowrap}
+  .content{padding:15px 12px}
+  .hero{padding:21px 17px;border-radius:17px}
+  .hero h2{font-size:18px}
+  .hero p{font-size:11px}
+  .hero-mark{font-size:65px}
+  .stats{gap:9px;margin:14px 0 18px}
+  .stat{padding:13px;border-radius:14px}
+  .stat-head{font-size:10px}
+  .stat-icon{width:32px;height:32px}
+  .stat-number{font-size:25px}
+  .toolbar{flex-direction:column;padding:13px}
+  .toolbar select{width:100%}
+  .card-head{padding:15px}
+  .recent-list{padding:5px 14px}
+  .section-intro h2{font-size:20px}
+  .section-intro{align-items:flex-start}
+}
+@media(max-width:390px){
+  .stats{grid-template-columns:1fr}
+  .hero-mark{display:none}
+  .topbar{flex-wrap:wrap}
+  .top-actions{width:100%;justify-content:flex-end}
+  .box{padding:25px 20px}
+  .recent-item{align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
 </head>
 
 <body>
 
-  <!-- فرم ورود -->
-  <div id="login" class="center">
-    <form id="lf" class="box" autocomplete="on">
-      <div class="logo">Z</div>
+<div id="login" class="center">
+  <div class="login-layout">
 
-      <p class="brand-caption">ZIVARI CONSULTING</p>
-
-      <h2>پنل مدیریت زیوری</h2>
-
-      <p class="description">
-        برای ورود به مرکز مدیریت، رمز عبور را وارد کن.
-      </p>
-
-      <label for="pw">رمز عبور</label>
-
-      <input
-        id="pw"
-        name="password"
-        type="password"
-        placeholder="رمز عبور مدیریت"
-        autocomplete="current-password"
-        required
-      >
-
-      <button class="primary-btn" id="loginBtn" type="submit">
-        ورود به پنل
-      </button>
-
-      <p id="ls" role="status" aria-live="polite"></p>
-    </form>
-  </div>
-
-  <!-- پنل مدیریت؛ پس از تأیید نشست توسط سرور نمایش داده می‌شود -->
-  <div id="panel" hidden>
-
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-logo">Z</div>
-
+    <section class="login-showcase" aria-hidden="true">
+      <div class="login-brand">
+        <div class="brand-mark">Z</div>
         <div>
           <strong>زیوری</strong>
-          <small>مرکز مدیریت مشاوره</small>
+          <small>مرکز مدیریت مشاوره تحصیلی</small>
         </div>
       </div>
 
-      <div class="menu-title">مدیریت مجموعه</div>
+      <div class="showcase-copy">
+        <span class="eyebrow">ZIVARI MANAGEMENT SUITE</span>
+        <h1>مدیریت هوشمندتر،<br>تصمیم‌گیری دقیق‌تر.</h1>
+        <p>درخواست‌ها، پیگیری مراجعان و اطلاعات مجموعه را از یک فضای منظم و یکپارچه مدیریت کن.</p>
 
-      <nav class="nav" aria-label="منوی اصلی">
-
-        <button
-          class="nav-item active"
-          type="button"
-          data-section="dashboard"
-        >
-          <span class="nav-icon">▦</span>
-          داشبورد
-        </button>
-
-        <button
-          class="nav-item"
-          type="button"
-          data-section="requests"
-        >
-          <span class="nav-icon">▤</span>
-          درخواست‌ها
-          <span id="newBadge" class="nav-badge" hidden>۰</span>
-        </button>
-
-        <button
-          class="nav-item"
-          type="button"
-          data-section="followups"
-        >
-          <span class="nav-icon">◷</span>
-          پیگیری مراجعان
-        </button>
-
-        <button
-          class="nav-item"
-          type="button"
-          data-section="students"
-        >
-          <span class="nav-icon">♙</span>
-          پرونده دانش‌آموزان
-        </button>
-
-        <button
-          class="nav-item"
-          type="button"
-          data-section="appointments"
-        >
-          <span class="nav-icon">▦</span>
-          جلسات مشاوره
-        </button>
-
-        <button
-          class="nav-item"
-          type="button"
-          data-section="reports"
-        >
-          <span class="nav-icon">▥</span>
-          گزارش‌ها
-        </button>
-
-      </nav>
-
-      <div class="sidebar-bottom">
-        <div class="sidebar-note">
-          <strong>✦ زیوری</strong>
-          <p>پیشرفت همراه با آرامش</p>
+        <div class="login-points">
+          <span>✦ مدیریت درخواست‌ها</span>
+          <span>◷ پیگیری مراجعان</span>
+          <span>▥ نمای آماری</span>
         </div>
-
-        <button type="button" id="out" class="logout">
-          ↪ خروج از حساب
-        </button>
       </div>
-    </aside>
 
-    <div class="workspace">
+      <div class="muted" style="font-size:10px">پیشرفت همراه با آرامش ✦</div>
+    </section>
 
-      <!-- نوار بالایی -->
-      <header class="topbar">
-        <div>
-          <small>ZIVARI / MANAGEMENT CENTER</small>
-          <h1 id="pageTitle">داشبورد مدیریت</h1>
-        </div>
+    <form id="lf" class="box" autocomplete="on">
+      <div class="logo">Z</div>
+      <span class="eyebrow">SECURE ADMIN ACCESS</span>
+      <h2>ورود به پنل مدیریت</h2>
+      <p class="description">برای دسترسی به مرکز مدیریت زیوری، رمز عبور را وارد کن.</p>
 
-        <div class="top-actions">
-          <span class="online">● پنل مدیریت</span>
+      <label class="field-label" for="pw">رمز عبور مدیریت</label>
+      <input id="pw" name="password" type="password" placeholder="رمز عبور را وارد کن" autocomplete="current-password" required>
 
-          <button type="button" id="ref" class="refresh-btn">
-            ↻ به‌روزرسانی
-          </button>
-        </div>
-      </header>
+      <button class="primary-btn" id="loginBtn" type="submit">ورود امن به پنل ←</button>
+      <p id="ls" role="status" aria-live="polite"></p>
 
-      <main class="content">
+      <div class="secure-note">این بخش فقط برای کاربران مجاز است. اطلاعات ورود خود را در اختیار دیگران قرار نده.</div>
+    </form>
 
-        <!-- داشبورد -->
-        <section id="dashboardSection" class="page-section">
-
-          <div class="hero">
-            <div>
-              <small>WELCOME TO ZIVARI</small>
-
-              <h2>به مرکز مدیریت زیوری خوش آمدی ✦</h2>
-
-              <p>
-                درخواست‌های مشاوره، وضعیت پیگیری‌ها و فعالیت‌های مجموعه را مدیریت کن.
-              </p>
-            </div>
-
-            <div class="hero-mark" aria-hidden="true">Z</div>
-          </div>
-
-          <div class="stats">
-
-            <article class="stat">
-              <div class="stat-head">
-                <span>کل درخواست‌ها</span>
-                <span class="stat-icon">▤</span>
-              </div>
-
-              <strong id="totalCount" class="stat-number">—</strong>
-
-              <span class="stat-caption">
-                تمام درخواست‌های ثبت‌شده
-              </span>
-            </article>
-
-            <article class="stat">
-              <div class="stat-head">
-                <span>درخواست‌های جدید</span>
-                <span class="stat-icon">✦</span>
-              </div>
-
-              <strong id="newCount" class="stat-number">—</strong>
-
-              <span class="stat-caption">
-                نیازمند بررسی اولیه
-              </span>
-            </article>
-
-            <article class="stat">
-              <div class="stat-head">
-                <span>در حال پیگیری</span>
-                <span class="stat-icon blue">◷</span>
-              </div>
-
-              <strong id="pendingCount" class="stat-number">—</strong>
-
-              <span class="stat-caption">
-                درخواست‌های در جریان
-              </span>
-            </article>
-
-            <article class="stat">
-              <div class="stat-head">
-                <span>تکمیل‌شده</span>
-                <span class="stat-icon green">✓</span>
-              </div>
-
-              <strong id="completedCount" class="stat-number">—</strong>
-
-              <span class="stat-caption">
-                پرونده‌های تکمیل‌شده
-              </span>
-            </article>
-
-          </div>
-
-          <section class="card">
-            <div class="card-head">
-              <div>
-                <h2>آخرین درخواست‌ها</h2>
-                <p>آخرین درخواست‌های ثبت‌شده در سایت</p>
-              </div>
-
-              <button
-                type="button"
-                class="secondary-btn"
-                data-section="requests"
-              >
-                مشاهده همه
-              </button>
-            </div>
-
-            <div id="recentRequests" class="recent-list">
-              <div class="empty">
-                در حال دریافت درخواست‌ها...
-              </div>
-            </div>
-          </section>
-
-        </section>
-
-        <!-- درخواست‌ها -->
-        <section id="requestsSection" class="page-section" hidden>
-
-          <div class="section-intro">
-            <h2>درخواست‌های مشاوره</h2>
-            <p>
-              درخواست‌ها را جست‌وجو کن و وضعیت آن‌ها را مدیریت کن.
-            </p>
-          </div>
-
-          <section class="card">
-
-            <div class="toolbar">
-              <div class="search">
-                <span>⌕</span>
-
-                <input
-                  id="searchRequests"
-                  type="search"
-                  placeholder="جست‌وجوی نام یا شماره تماس..."
-                  aria-label="جست‌وجوی درخواست‌ها"
-                >
-              </div>
-
-              <select id="statusFilter" aria-label="فیلتر وضعیت">
-                <option value="">همه وضعیت‌ها</option>
-                <option value="new">جدید</option>
-                <option value="contacted">در حال پیگیری</option>
-                <option value="done">تکمیل‌شده</option>
-                <option value="cancelled">لغوشده</option>
-              </select>
-            </div>
-
-            <div id="table">
-              <div class="empty">
-                در حال آماده‌سازی درخواست‌ها...
-              </div>
-            </div>
-
-          </section>
-        </section>
-
-        <!-- پیگیری‌ها -->
-        <section id="followupsSection" class="page-section" hidden>
-
-          <div class="section-intro">
-            <h2>پیگیری مراجعان</h2>
-            <p>
-              درخواست‌هایی که نیاز به تماس یا پیگیری مجدد دارند.
-            </p>
-          </div>
-
-          <section class="card">
-            <div class="card-head">
-              <div>
-                <h2>فهرست پیگیری‌ها</h2>
-                <p>
-                  درخواست‌های در حال پیگیری را از بخش درخواست‌ها مشخص کن.
-                </p>
-              </div>
-            </div>
-
-            <div class="empty">
-              <strong>◷</strong>
-              این بخش در نسخه فعلی نمای اختصاصی ندارد.
-            </div>
-          </section>
-
-        </section>
-
-        <!-- پرونده دانش‌آموزان -->
-        <section id="studentsSection" class="page-section" hidden>
-
-          <div class="section-intro">
-            <h2>پرونده دانش‌آموزان</h2>
-            <p>
-              محیط اختصاصی برای مدیریت اطلاعات تحصیلی مراجعان.
-            </p>
-          </div>
-
-          <section class="card">
-            <div class="empty">
-              <strong>♙</strong>
-              این بخش هنوز به پایگاه داده متصل نشده است.
-            </div>
-          </section>
-
-        </section>
-
-        <!-- جلسات مشاوره -->
-        <section id="appointmentsSection" class="page-section" hidden>
-
-          <div class="section-intro">
-            <h2>جلسات مشاوره</h2>
-            <p>
-              فضای مدیریت و برنامه‌ریزی جلسات مشاوره.
-            </p>
-          </div>
-
-          <section class="card">
-            <div class="empty">
-              <strong>▦</strong>
-              تقویم جلسات هنوز به پایگاه داده متصل نشده است.
-            </div>
-          </section>
-
-        </section>
-
-        <!-- گزارش‌ها -->
-        <section id="reportsSection" class="page-section" hidden>
-
-          <div class="section-intro">
-            <h2>گزارش‌های مدیریتی</h2>
-            <p>
-              نمای کلی از عملکرد و درخواست‌های مجموعه.
-            </p>
-          </div>
-
-          <section class="card">
-            <div class="empty">
-              <strong>▥</strong>
-              آمار کلی در داشبورد قابل مشاهده است.
-            </div>
-          </section>
-
-        </section>
-
-        <!-- پابرگ -->
-        <footer class="footer">
-          <span>زیوری | مرکز مدیریت مشاوره</span>
-          <span>پیشرفت همراه با آرامش ✦</span>
-        </footer>
-
-      </main>
-    </div>
   </div>
+</div>
 
-  <!-- پیام‌های وضعیت -->
-  <div
-    id="toast"
-    class="toast"
-    role="status"
-    aria-live="polite"
-    hidden
-  ></div>
+<div id="panel" hidden>
 
-  <!-- فقط یک فایل اسکریپت برای مدیریت پنل -->
-  <script src="/admin.js?v=2"></script>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">Z</div>
+      <div>
+        <strong>زیوری</strong>
+        <small>مرکز مدیریت مشاوره</small>
+      </div>
+    </div>
 
+    <div class="menu-title">فضای کاری</div>
+
+    <nav class="nav" aria-label="منوی اصلی">
+      <button class="nav-item active" type="button" data-section="dashboard">
+        <span class="nav-icon">▦</span><span>داشبورد</span>
+      </button>
+
+      <button class="nav-item" type="button" data-section="requests">
+        <span class="nav-icon">▤</span><span>درخواست‌ها</span>
+        <span id="newBadge" class="nav-badge" hidden>۰</span>
+      </button>
+
+      <button class="nav-item" type="button" data-section="followups">
+        <span class="nav-icon">◷</span><span>پیگیری مراجعان</span>
+      </button>
+
+      <button class="nav-item" type="button" data-section="students">
+        <span class="nav-icon">♙</span><span>پرونده دانش‌آموزان</span>
+      </button>
+
+      <button class="nav-item" type="button" data-section="appointments">
+        <span class="nav-icon">▦</span><span>جلسات مشاوره</span>
+      </button>
+
+      <button class="nav-item" type="button" data-section="reports">
+        <span class="nav-icon">▥</span><span>گزارش‌ها</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="sidebar-note">
+        <strong>✦ زیوری</strong>
+        <p>پیشرفت همراه با آرامش</p>
+      </div>
+
+      <button type="button" id="out" class="btn logout">↪ خروج از حساب</button>
+    </div>
+  </aside>
+
+  <div class="workspace">
+
+    <header class="topbar">
+      <div>
+        <small>ZIVARI / MANAGEMENT CENTER</small>
+        <h1 id="pageTitle">داشبورد مدیریت</h1>
+      </div>
+
+      <div class="top-actions">
+        <span class="online">پنل فعال</span>
+        <button type="button" id="ref" class="btn refresh-btn">↻ به‌روزرسانی</button>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- Dashboard -->
+      <section id="dashboardSection" class="page-section">
+
+        <div class="hero">
+          <div>
+            <span class="eyebrow">WELCOME TO ZIVARI</span>
+            <h2>به مرکز مدیریت زیوری خوش آمدی ✦</h2>
+            <p>یک نمای کلی از درخواست‌های مشاوره، پیگیری مراجعان و فعالیت‌های مجموعه در اختیار داری.</p>
+            <span class="hero-chip">● فضای کاری آماده است</span>
+          </div>
+          <div class="hero-mark" aria-hidden="true">Z</div>
+        </div>
+
+        <div class="stats">
+
+          <article class="stat">
+            <div class="stat-head">
+              <span>کل درخواست‌ها</span>
+              <span class="stat-icon">▤</span>
+            </div>
+            <strong id="totalCount" class="stat-number">—</strong>
+            <span class="stat-caption">تمام درخواست‌های ثبت‌شده</span>
+          </article>
+
+          <article class="stat">
+            <div class="stat-head">
+              <span>درخواست‌های جدید</span>
+              <span class="stat-icon">✦</span>
+            </div>
+            <strong id="newCount" class="stat-number">—</strong>
+            <span class="stat-caption">نیازمند بررسی اولیه</span>
+          </article>
+
+          <article class="stat">
+            <div class="stat-head">
+              <span>در حال پیگیری</span>
+              <span class="stat-icon blue">◷</span>
+            </div>
+            <strong id="pendingCount" class="stat-number">—</strong>
+            <span class="stat-caption">درخواست‌های در جریان</span>
+          </article>
+
+          <article class="stat">
+            <div class="stat-head">
+              <span>تکمیل‌شده</span>
+              <span class="stat-icon green">✓</span>
+            </div>
+            <strong id="completedCount" class="stat-number">—</strong>
+            <span class="stat-caption">پرونده‌های تکمیل‌شده</span>
+          </article>
+
+        </div>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>آخرین درخواست‌ها</h2>
+              <p>جدیدترین درخواست‌های ثبت‌شده در سایت</p>
+            </div>
+            <button type="button" class="btn" data-section="requests">مشاهده همه ←</button>
+          </div>
+
+          <div id="recentRequests" class="recent-list">
+            <div class="empty">در حال دریافت درخواست‌ها...</div>
+          </div>
+        </section>
+
+      </section>
+
+      <!-- Requests -->
+      <section id="requestsSection" class="page-section" hidden>
+
+        <div class="section-intro">
+          <div>
+            <span class="eyebrow">REQUEST MANAGEMENT</span>
+            <h2>درخواست‌های مشاوره</h2>
+            <p>درخواست‌ها را جست‌وجو کن، بررسی کن و وضعیت هر مورد را مدیریت کن.</p>
+          </div>
+        </div>
+
+        <section class="card">
+
+          <div class="toolbar">
+
+            <div class="search">
+              <span aria-hidden="true">⌕</span>
+              <input id="searchRequests" type="search" placeholder="جست‌وجوی نام، شماره تماس یا خدمت..." aria-label="جست‌وجوی درخواست‌ها">
+            </div>
+
+            <select id="statusFilter" aria-label="فیلتر وضعیت">
+              <option value="">همه وضعیت‌ها</option>
+              <option value="new">جدید</option>
+              <option value="contacted">در حال پیگیری</option>
+              <option value="done">تکمیل‌شده</option>
+              <option value="cancelled">لغوشده</option>
+            </select>
+
+          </div>
+
+          <div id="table">
+            <div class="empty">در حال آماده‌سازی درخواست‌ها...</div>
+          </div>
+
+        </section>
+      </section>
+
+      <!-- Follow-ups -->
+      <section id="followupsSection" class="page-section" hidden>
+
+        <div class="section-intro">
+          <div>
+            <span class="eyebrow">FOLLOW-UP WORKSPACE</span>
+            <h2>پیگیری مراجعان</h2>
+            <p>نمای اختصاصی برای رسیدگی به درخواست‌هایی که نیاز به پیگیری مجدد دارند.</p>
+          </div>
+        </div>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <h2>فهرست پیگیری‌ها</h2>
+              <p>وضعیت درخواست‌ها را از بخش درخواست‌ها به‌روزرسانی کن.</p>
+            </div>
+          </div>
+
+          <div class="empty">
+            <strong>◷</strong>
+            این بخش هنوز به فهرست پیگیری مستقل متصل نشده است.
+          </div>
+        </section>
+
+      </section>
+
+      <!-- Students -->
+      <section id="studentsSection" class="page-section" hidden>
+
+        <div class="section-intro">
+          <div>
+            <span class="eyebrow">STUDENT RECORDS</span>
+            <h2>پرونده دانش‌آموزان</h2>
+            <p>فضای آماده برای توسعه پرونده‌های تحصیلی و اطلاعات مراجعان.</p>
+          </div>
+        </div>
+
+        <section class="card">
+          <div class="empty">
+            <strong>♙</strong>
+            این بخش هنوز به پایگاه داده متصل نشده است.
+          </div>
+        </section>
+
+      </section>
+
+      <!-- Appointments -->
+      <section id="appointmentsSection" class="page-section" hidden>
+
+        <div class="section-intro">
+          <div>
+            <span class="eyebrow">APPOINTMENT PLANNER</span>
+            <h2>جلسات مشاوره</h2>
+            <p>فضای مدیریت و برنامه‌ریزی جلسات مشاوره.</p>
+          </div>
+        </div>
+
+        <section class="card">
+          <div class="empty">
+            <strong>▦</strong>
+            تقویم جلسات هنوز به پایگاه داده متصل نشده است.
+          </div>
+        </section>
+
+      </section>
+
+      <!-- Reports -->
+      <section id="reportsSection" class="page-section" hidden>
+
+        <div class="section-intro">
+          <div>
+            <span class="eyebrow">PERFORMANCE OVERVIEW</span>
+            <h2>گزارش‌های مدیریتی</h2>
+            <p>نمای کلی از عملکرد و درخواست‌های مجموعه.</p>
+          </div>
+        </div>
+
+        <section class="card">
+          <div class="empty">
+            <strong>▥</strong>
+            آمارهای پایه در داشبورد قابل مشاهده‌اند؛ گزارش‌های پیشرفته نیازمند اتصال به داده‌های بیشتر هستند.
+          </div>
+        </section>
+
+      </section>
+
+      <footer class="footer">
+        <span>زیوری | مرکز مدیریت مشاوره</span>
+        <span>پیشرفت همراه با آرامش ✦</span>
+      </footer>
+
+    </main>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="/admin.js?v=3"></script>
 </body>
 </html>
