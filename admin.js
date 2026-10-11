@@ -1,807 +1,672 @@
+(() => {
 "use strict";
 
-(() => {
-  const $ = (selector) => document.querySelector(selector);
+const $ = selector => document.querySelector(selector);
+const $$ = selector => [...document.querySelectorAll(selector)];
 
-  const loginBox = $("#login");
-  const panel = $("#panel");
-  const loginForm = $("#lf");
-  const passwordInput = $("#pw");
-  const loginStatus = $("#ls");
-  const loginButton = $("#loginBtn");
-  const logoutButton = $("#out");
-  const refreshButton = $("#ref");
+let requests = [];
+let users = [];
+let students = [];
+let activeStudentId = null;
+let messageTimer = null;
 
-  const table = $("#table");
-  const searchInput = $("#searchRequests");
-  const statusFilter = $("#statusFilter");
+const pageInfo = {
+dashboard: ["داشبورد", "نمای کلی عملکرد مجموعه"],
+requests: ["درخواست‌های مشاوره", "مدیریت درخواست‌های ثبت‌شده"],
+users: ["مدیریت کاربران", "ساخت و مشاهده حساب‌های کاربری"],
+students: ["دانش‌آموزان", "مشاهده پرونده‌ها و گزارش‌های درسی"],
+reports: ["گزارش‌ها", "آمار کلی و خروجی اطلاعات"]
+};
 
-  const totalCount = $("#totalCount");
-  const newCount = $("#newCount");
-  const pendingCount = $("#pendingCount");
-  const completedCount = $("#completedCount");
-  const newBadge = $("#newBadge");
-  const recentRequests = $("#recentRequests");
-  const toastElement = $("#toast");
+const escapeHTML = value =>
+String(value ?? "").replace(/[&<>"']/g, char => ({
+"&": "&",
+"<": "<",
+">": ">",
+'"': """,
+"'": "'"
+})[char]);
 
-  const VALID_STATUSES = [
-    "new",
-    "contacted",
-    "done",
-    "cancelled"
-  ];
+const number = value =>
+new Intl.NumberFormat("fa-IR").format(Number(value) || 0);
 
-  const STATUS_LABELS = {
-    new: "جدید",
-    contacted: "در حال پیگیری",
-    done: "تکمیل‌شده",
-    cancelled: "لغوشده"
-  };
+async function api(url, options = {}) {
+const response = await fetch(url, {
+credentials: "same-origin",
+...options,
+headers: {
+...(options.body ? { "Content-Type": "application/json" } : {}),
+...(options.headers || {})
+}
+});
 
-  const SECTION_TITLES = {
-    dashboard: "داشبورد مدیریت",
-    requests: "درخواست‌های مشاوره",
-    followups: "پیگیری مراجعان",
-    students: "پرونده دانش‌آموزان",
-    appointments: "جلسات مشاوره",
-    reports: "گزارش‌های مدیریتی"
-  };
+const data = await response.json().catch(() => ({}));
 
-  const SECTION_IDS = {
-    dashboard: "dashboardSection",
-    requests: "requestsSection",
-    followups: "followupsSection",
-    students: "studentsSection",
-    appointments: "appointmentsSection",
-    reports: "reportsSection"
-  };
-
-  let requests = [];
-  let isLoading = false;
-  let isAuthenticated = false;
-  let toastTimer = null;
-
-  /* =====================================
-     توابع عمومی
-  ===================================== */
-
-  function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, (char) => {
-      const entities = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-      };
-
-      return entities[char];
-    });
+if (!response.ok) {
+  if (response.status === 401 && !url.includes("/auth/login")) {
+    showLogin();
   }
-
-  function showToast(message, type = "success") {
-    if (!toastElement) {
-      alert(message);
-      return;
-    }
-
-    toastElement.textContent = message;
-    toastElement.style.borderColor =
-      type === "error" ? "#ff7777" : "#d4af37";
-
-    toastElement.hidden = false;
-
-    clearTimeout(toastTimer);
-
-    toastTimer = setTimeout(() => {
-      toastElement.hidden = true;
-    }, 3500);
-  }
-
-  async function api(url, options = {}) {
-    const response = await fetch(url, {
-      credentials: "same-origin",
-      cache: "no-store",
-      ...options,
-      headers: {
-        ...(options.body
-          ? { "Content-Type": "application/json" }
-          : {}),
-        ...(options.headers || {})
-      }
-    });
-
-    let data = {};
-
-    try {
-      data = await response.json();
-    } catch {
-      data = {};
-    }
-
-    if (!response.ok) {
-      const error = new Error(
-        data.error || `خطای سرور (${response.status})`
-      );
-
-      error.status = response.status;
-
-      throw error;
-    }
-
-    return data;
-  }
-
-  function setNumber(element, value) {
-    if (!element) return;
-
-    const number = Number(value || 0);
-
-    element.textContent = Number.isFinite(number)
-      ? number.toLocaleString("fa-IR")
-      : "۰";
-  }
-
-  function formatDate(value) {
-    if (!value) return "نامشخص";
-
-    const date = new Date(
-      String(value).replace(" ", "T")
-    );
-
-    if (Number.isNaN(date.getTime())) {
-      return String(value);
-    }
-
-    try {
-      return new Intl.DateTimeFormat("fa-IR", {
-        dateStyle: "medium",
-        timeStyle: "short"
-      }).format(date);
-    } catch {
-      return date.toLocaleString();
-    }
-  }
-
-  /* =====================================
-     نمایش فرم ورود و پنل
-  ===================================== */
-
-  function showLogin(message = "") {
-    isAuthenticated = false;
-
-    if (loginBox) {
-      loginBox.hidden = false;
-    }
-
-    if (panel) {
-      panel.hidden = true;
-    }
-
-    if (loginStatus) {
-      loginStatus.textContent = message;
-    }
-
-    if (passwordInput) {
-      passwordInput.value = "";
-    }
-  }
-
-  function showPanel() {
-    isAuthenticated = true;
-
-    if (loginBox) {
-      loginBox.hidden = true;
-    }
-
-    if (panel) {
-      panel.hidden = false;
-    }
-
-    if (loginStatus) {
-      loginStatus.textContent = "";
-    }
-  }
-
-  /* =====================================
-     مدیریت بخش‌های پنل
-  ===================================== */
-
-  function showSection(name) {
-    if (!isAuthenticated) return;
-
-    const selectedId = SECTION_IDS[name];
-
-    if (!selectedId) return;
-
-    Object.values(SECTION_IDS).forEach((id) => {
-      const section = document.getElementById(id);
-
-      if (section) {
-        section.hidden = true;
-      }
-    });
-
-    const selected = document.getElementById(selectedId);
-
-    if (selected) {
-      selected.hidden = false;
-    }
-
-    document.querySelectorAll(".nav-item").forEach((button) => {
-      button.classList.toggle(
-        "active",
-        button.dataset.section === name
-      );
-    });
-
-    const title = $("#pageTitle");
-
-    if (title) {
-      title.textContent = SECTION_TITLES[name];
-    }
-
-    if (name === "dashboard") {
-      loadDashboard().catch(handleError);
-    }
-
-    if (name === "requests") {
-      loadRequests().catch(handleError);
-    }
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
-  }
-
-  function setupNavigation() {
-    document.querySelectorAll("[data-section]").forEach((button) => {
-      button.addEventListener("click", () => {
-        showSection(button.dataset.section);
-      });
-    });
-  }
-
-  /* =====================================
-     فیلتر وضعیت درخواست‌ها
-  ===================================== */
-
-  function setupStatusFilter() {
-    if (!statusFilter) return;
-
-    const currentValue = statusFilter.value;
-
-    statusFilter.innerHTML = `
-      <option value="">همه وضعیت‌ها</option>
-      <option value="new">جدید</option>
-      <option value="contacted">در حال پیگیری</option>
-      <option value="done">تکمیل‌شده</option>
-      <option value="cancelled">لغوشده</option>
-    `;
-
-    statusFilter.value = VALID_STATUSES.includes(currentValue)
-      ? currentValue
-      : "";
-  }
-
-  /* =====================================
-     داشبورد
-  ===================================== */
-
-  async function loadDashboard() {
-    const data = await api("/api/admin/dashboard");
-    const stats = data.stats || {};
-
-    setNumber(totalCount, stats.total);
-    setNumber(newCount, stats.new);
-    setNumber(pendingCount, stats.pending);
-    setNumber(completedCount, stats.completed);
-
-    if (newBadge) {
-      const count = Number(stats.new || 0);
-
-      newBadge.textContent = count.toLocaleString("fa-IR");
-      newBadge.hidden = count === 0;
-    }
-
-    renderRecentRequests(
-      Array.isArray(data.recent) ? data.recent : []
-    );
-  }
-
-  function renderRecentRequests(items) {
-    if (!recentRequests) return;
-
-    if (!items.length) {
-      recentRequests.innerHTML = `
-        <div class="empty">
-          <strong>▤</strong>
-          هنوز درخواستی ثبت نشده است.
-        </div>
-      `;
-
-      return;
-    }
-
-    recentRequests.innerHTML = items.map((item) => {
-      const status = VALID_STATUSES.includes(item.status)
-        ? item.status
-        : "new";
-
-      return `
-        <div class="recent-item">
-          <div>
-            <strong>
-              ${escapeHTML(item.name || "بدون نام")}
-            </strong>
-
-            <small>
-              ${escapeHTML(item.phone || "—")}
-            </small>
-          </div>
-
-          <div>
-            <span class="status-pill">
-              ${STATUS_LABELS[status]}
-            </span>
-
-            <br>
-
-            <small>
-              ${escapeHTML(formatDate(item.created_at))}
-            </small>
-          </div>
-        </div>
-      `;
-    }).join("");
-  }
-
-  /* =====================================
-     درخواست‌های مشاوره
-  ===================================== */
-
-  async function loadRequests() {
-    const data = await api("/api/admin/requests");
-
-    requests = Array.isArray(data)
-      ? data
-      : Array.isArray(data.requests)
-        ? data.requests
-        : [];
-
-    renderRequests();
-  }
-
-  function getFilteredRequests() {
-    const term = (searchInput?.value || "")
-      .trim()
-      .toLocaleLowerCase();
-
-    const selectedStatus = statusFilter?.value || "";
-
-    return requests.filter((item) => {
-      const statusMatches =
-        !selectedStatus || item.status === selectedStatus;
-
-      const searchable = [
-        item.name,
-        item.phone,
-        item.grade,
-        item.service,
-        item.message
-      ]
-        .map((value) => String(value || ""))
-        .join(" ")
-        .toLocaleLowerCase();
-
-      return statusMatches &&
-        (!term || searchable.includes(term));
-    });
-  }
-
-  function renderRequests() {
-    if (!table) return;
-
-    const filtered = getFilteredRequests();
-
-    if (!filtered.length) {
-      table.innerHTML = `
-        <div class="empty">
-          <strong>⌕</strong>
-          درخواستی با این مشخصات پیدا نشد.
-        </div>
-      `;
-
-      return;
-    }
-
-    const rows = filtered.map((item) => {
-      const id = Number(item.id);
-
-      const options = VALID_STATUSES.map((status) => `
-        <option
-          value="${status}"
-          ${item.status === status ? "selected" : ""}>
-          ${STATUS_LABELS[status]}
-        </option>
-      `).join("");
-
-      return `
-        <tr data-request-id="${id}">
-          <td>${id}</td>
-
-          <td>
-            <strong>${escapeHTML(item.name || "—")}</strong>
-            <div class="muted">
-              ${escapeHTML(item.phone || "—")}
-            </div>
-          </td>
-
-          <td>${escapeHTML(item.grade || "—")}</td>
-
-          <td>${escapeHTML(item.service || "—")}</td>
-
-          <td>${escapeHTML(item.message || "—")}</td>
-
-          <td>
-            <select
-              data-action="status"
-              aria-label="وضعیت درخواست ${id}">
-              ${options}
-            </select>
-          </td>
-
-          <td>
-            <small>
-              ${escapeHTML(formatDate(item.created_at))}
-            </small>
-
-            <br>
-
-            <button
-              type="button"
-              data-action="delete"
-              aria-label="حذف درخواست ${id}">
-              حذف
-            </button>
-          </td>
+  throw new Error(data.error || "خطا در ارتباط با سرور");
+}
+
+return data;
+
+}
+
+function showMessage(message, error = false) {
+const element = $("#global-message");
+if (!element) return;
+
+clearTimeout(messageTimer);
+element.textContent = message;
+element.classList.toggle("is-error", error);
+element.classList.add("is-visible");
+
+messageTimer = setTimeout(() => {
+  element.classList.remove("is-visible");
+}, 4000);
+
+}
+
+function showLogin() {
+$("#login-view").hidden = false;
+$("#admin-app").hidden = true;
+}
+
+function showApp() {
+$("#login-view").hidden = true;
+$("#admin-app").hidden = false;
+}
+
+function statusLabel(status) {
+return ({
+new: "جدید",
+contacted: "در حال پیگیری",
+done: "تکمیل‌شده",
+cancelled: "لغوشده",
+pending: "در انتظار بررسی",
+approved: "تأییدشده",
+rejected: "ردشده"
+})[status] || status || "نامشخص";
+}
+
+function statusBadge(status) {
+return "<span class="status-badge status-${escapeHTML(status)}">${escapeHTML(statusLabel(status))}</span>";
+}
+
+function emptyRow(columns, text = "اطلاعاتی برای نمایش وجود ندارد.") {
+return "<tr><td colspan="${columns}" class="empty-cell">${escapeHTML(text)}</td></tr>";
+}
+
+function openPage(page) {
+if (!pageInfo[page]) return;
+
+$$(".page-section").forEach(section => {
+  section.hidden = section.id !== `page-${page}`;
+});
+
+$$(".nav-item").forEach(button => {
+  button.classList.toggle("active", button.dataset.page === page);
+});
+
+$("#page-title").textContent = pageInfo[page][0];
+$("#page-description").textContent = pageInfo[page][1];
+
+if (page === "dashboard") loadDashboard();
+if (page === "requests") loadRequests();
+if (page === "users") loadUsers();
+if (page === "students") loadStudents();
+if (page === "reports") loadReports();
+
+}
+
+async function loadDashboard() {
+try {
+const data = await api("/api/admin/dashboard");
+const stats = data.stats || {};
+
+  $("#stat-total").textContent = number(stats.total);
+  $("#stat-new").textContent = number(stats.new);
+  $("#stat-pending").textContent = number(stats.pending);
+  $("#stat-completed").textContent = number(stats.completed);
+
+  renderRecent(data.recent || []);
+} catch (error) {
+  showMessage(error.message, true);
+}
+
+}
+
+function renderRecent(items) {
+const tbody = $("#recent-requests");
+
+if (!items.length) {
+  tbody.innerHTML = emptyRow(5);
+  return;
+}
+
+tbody.innerHTML = items.map(item => `
+  <tr>
+    <td>${escapeHTML(item.name)}</td>
+    <td>${escapeHTML(item.phone)}</td>
+    <td>${escapeHTML(item.service || "ثبت نشده")}</td>
+    <td>${statusBadge(item.status)}</td>
+    <td><button class="small-button" data-request-detail="${item.id}">جزئیات</button></td>
+  </tr>
+`).join("");
+
+}
+
+async function loadRequests() {
+try {
+const data = await api("/api/admin/requests");
+requests = Array.isArray(data) ? data : [];
+renderRequests();
+} catch (error) {
+showMessage(error.message, true);
+}
+}
+
+function renderRequests() {
+const query = $("#request-search").value.trim().toLocaleLowerCase();
+const status = $("#request-status-filter").value;
+
+const filtered = requests.filter(item => {
+  const text = [
+    item.name,
+    item.phone,
+    item.grade,
+    item.service,
+    item.message
+  ].join(" ").toLocaleLowerCase();
+
+  return text.includes(query) && (!status || item.status === status);
+});
+
+const tbody = $("#requests-table");
+
+if (!filtered.length) {
+  tbody.innerHTML = emptyRow(7);
+  return;
+}
+
+tbody.innerHTML = filtered.map(item => `
+  <tr>
+    <td>${escapeHTML(item.name)}</td>
+    <td>${escapeHTML(item.phone)}</td>
+    <td>${escapeHTML(item.grade || "-")}</td>
+    <td>${escapeHTML(item.service || "-")}</td>
+    <td>${escapeHTML(item.created_at || "-")}</td>
+    <td>
+      <select data-status-id="${item.id}" aria-label="تغییر وضعیت درخواست">
+        ${[
+          ["new", "جدید"],
+          ["contacted", "در حال پیگیری"],
+          ["done", "تکمیل‌شده"],
+          ["cancelled", "لغوشده"]
+        ].map(([value, label]) => `
+          <option value="${value}" ${item.status === value ? "selected" : ""}>${label}</option>
+        `).join("")}
+      </select>
+    </td>
+    <td>
+      <button class="small-button" data-request-detail="${item.id}">مشاهده</button>
+      <button class="small-button danger-button" data-delete-request="${item.id}">حذف</button>
+    </td>
+  </tr>
+`).join("");
+
+}
+
+async function updateRequestStatus(id, status) {
+try {
+await api("/api/admin/requests/${id}", {
+method: "PATCH",
+body: JSON.stringify({ status })
+});
+
+  showMessage("وضعیت درخواست به‌روزرسانی شد.");
+  await loadRequests();
+  await loadDashboard();
+} catch (error) {
+  showMessage(error.message, true);
+  await loadRequests();
+}
+
+}
+
+async function deleteRequest(id) {
+if (!confirm("آیا از حذف این درخواست مطمئن هستید؟ این عملیات قابل بازگشت نیست.")) {
+return;
+}
+
+try {
+  await api(`/api/admin/requests/${id}`, { method: "DELETE" });
+  showMessage("درخواست حذف شد.");
+  await loadRequests();
+  await loadDashboard();
+} catch (error) {
+  showMessage(error.message, true);
+}
+
+}
+
+function showRequestDetails(id) {
+const item = requests.find(request => Number(request.id) === Number(id));
+
+if (!item) {
+  showMessage("اطلاعات درخواست پیدا نشد.", true);
+  return;
+}
+
+$("#request-details").innerHTML = `
+  <dl class="details-list">
+    <dt>نام</dt><dd>${escapeHTML(item.name)}</dd>
+    <dt>شماره تماس</dt><dd>${escapeHTML(item.phone)}</dd>
+    <dt>پایه تحصیلی</dt><dd>${escapeHTML(item.grade || "-")}</dd>
+    <dt>خدمت درخواستی</dt><dd>${escapeHTML(item.service || "-")}</dd>
+    <dt>تاریخ ثبت</dt><dd>${escapeHTML(item.created_at || "-")}</dd>
+    <dt>وضعیت</dt><dd>${statusBadge(item.status)}</dd>
+    <dt>توضیحات</dt><dd class="preserve-lines">${escapeHTML(item.message || "توضیحی ثبت نشده است.")}</dd>
+  </dl>
+`;
+
+$("#request-dialog").showModal();
+
+}
+
+async function loadUsers() {
+try {
+const data = await api("/api/users");
+users = data.users || [];
+
+  $("#users-table").innerHTML = users.length
+    ? users.map(user => `
+        <tr>
+          <td>${escapeHTML(user.full_name)}</td>
+          <td>${escapeHTML(user.username)}</td>
+          <td>${user.role === "admin" ? "مدیر" : user.role === "counselor" ? "مشاور" : "دانش‌آموز"}</td>
+          <td>${escapeHTML(user.phone || "-")}</td>
+          <td>${user.active ? "فعال" : "غیرفعال"}</td>
         </tr>
-      `;
-    }).join("");
+      `).join("")
+    : emptyRow(5);
+} catch (error) {
+  showMessage(error.message, true);
+}
 
-    table.innerHTML = `
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>شناسه</th>
-              <th>نام و تماس</th>
-              <th>پایه</th>
-              <th>خدمت</th>
-              <th>توضیحات</th>
-              <th>وضعیت</th>
-              <th>عملیات</th>
-            </tr>
-          </thead>
+}
 
-          <tbody>
-            ${rows}
-          </tbody>
-        </table>
-      </div>
-    `;
+async function createUser(event) {
+event.preventDefault();
+
+const form = event.currentTarget;
+const payload = Object.fromEntries(new FormData(form));
+
+try {
+  await api("/api/users", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+  form.reset();
+  showMessage("حساب کاربری ساخته شد.");
+  await loadUsers();
+  await loadStudents();
+  await loadReports();
+} catch (error) {
+  showMessage(error.message, true);
+}
+
+}
+
+async function loadStudents() {
+try {
+const data = await api("/api/students");
+students = data.students || [];
+
+  $("#students-table").innerHTML = students.length
+    ? students.map(student => `
+        <tr>
+          <td>${escapeHTML(student.full_name)}</td>
+          <td>${escapeHTML(student.student_code || "-")}</td>
+          <td>${escapeHTML(student.grade || "ثبت نشده")}</td>
+          <td>${number(student.id)}</td>
+          <td><button class="small-button" data-open-student="${student.id}">مشاهده پرونده</button></td>
+        </tr>
+      `).join("")
+    : emptyRow(5);
+} catch (error) {
+  showMessage(error.message, true);
+}
+
+}
+
+async function openStudent(id) {
+activeStudentId = Number(id);
+
+try {
+  const [studentData, plansData, reportsData, changesData] = await Promise.all([
+    api(`/api/students/${id}`),
+    api(`/api/students/${id}/plans`),
+    api(`/api/students/${id}/reports`),
+    api(`/api/students/${id}/change-requests`)
+  ]);
+
+  const student = studentData.student;
+
+  $("#student-details-title").textContent = `پرونده ${student.full_name}`;
+
+  $("#student-plans").innerHTML = renderDataList(
+    plansData.plans || [],
+    item => `<strong>${escapeHTML(item.title)}</strong>
+      <p>${escapeHTML(item.subject)} | ${escapeHTML(item.plan_date)}</p>
+      <p>${escapeHTML(item.task)}</p>
+      <small>${number(item.duration_minutes)} دقیقه</small>`
+  );
+
+  $("#student-reports").innerHTML = renderDataList(
+    reportsData.reports || [],
+    item => `<strong>${escapeHTML(item.subject)}</strong>
+      <p>تاریخ: ${escapeHTML(item.report_date)}</p>
+      <p>برنامه: ${number(item.planned_minutes)} دقیقه | انجام‌شده: ${number(item.actual_minutes)} دقیقه</p>
+      <p>درصد انجام: ${number(item.completion_percent)}٪</p>
+      <p>${escapeHTML(item.note || "")}</p>
+      <label>بازخورد مشاور
+        <textarea data-feedback="${item.id}" maxlength="2000">${escapeHTML(item.counselor_feedback || "")}</textarea>
+      </label>
+      <button class="small-button" data-save-feedback="${item.id}">ذخیره بازخورد</button>`
+  );
+
+  $("#student-change-requests").innerHTML = renderDataList(
+    changesData.requests || [],
+    item => `<p>${escapeHTML(item.message)}</p>
+      <p>وضعیت: ${statusBadge(item.status)}</p>
+      <p>پاسخ: ${escapeHTML(item.counselor_reply || "پاسخی ثبت نشده است.")}</p>
+      ${item.status === "pending" ? `
+        <label>پاسخ مشاور
+          <textarea data-reply="${item.id}" maxlength="2000"></textarea>
+        </label>
+        <button class="small-button" data-change-action="${item.id}" data-change-status="approved">تأیید</button>
+        <button class="small-button danger-button" data-change-action="${item.id}" data-change-status="rejected">رد</button>
+      ` : ""}`
+  );
+
+  $("#student-details").hidden = false;
+  $("#student-details").scrollIntoView({ behavior: "smooth", block: "start" });
+} catch (error) {
+  showMessage(error.message, true);
+}
+
+}
+
+function renderDataList(items, renderItem) {
+if (!items.length) {
+return '<p class="empty-cell">اطلاعاتی ثبت نشده است.</p>';
+}
+
+return items.map(item => `
+  <article class="data-list-item">${renderItem(item)}</article>
+`).join("");
+
+}
+
+async function saveFeedback(id) {
+const textarea = $("[data-feedback="${id}"]");
+if (!textarea) return;
+
+try {
+  await api(`/api/reports/${id}/feedback`, {
+    method: "PATCH",
+    body: JSON.stringify({ feedback: textarea.value })
+  });
+
+  showMessage("بازخورد ذخیره شد.");
+} catch (error) {
+  showMessage(error.message, true);
+}
+
+}
+
+async function updateChangeRequest(id, status) {
+const reply = $("[data-reply="${id}"]")?.value || "";
+
+try {
+  await api(`/api/change-requests/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      status,
+      counselor_reply: reply
+    })
+  });
+
+  showMessage("درخواست تغییر برنامه به‌روزرسانی شد.");
+
+  if (activeStudentId) {
+    await openStudent(activeStudentId);
   }
 
-  /* =====================================
-     به‌روزرسانی اطلاعات
-  ===================================== */
+  await loadReports();
+} catch (error) {
+  showMessage(error.message, true);
+}
 
-  async function refreshAll() {
-    if (isLoading || !isAuthenticated) return;
+}
 
-    isLoading = true;
+async function loadReports() {
+try {
+const [usersData, studentsData, requestsData] = await Promise.all([
+api("/api/users"),
+api("/api/students"),
+api("/api/admin/requests")
+]);
 
-    const originalText = refreshButton
-      ? refreshButton.textContent
-      : "";
+  const allUsers = usersData.users || [];
+  const allStudents = studentsData.students || [];
+  const allRequests = Array.isArray(requestsData) ? requestsData : [];
 
-    if (refreshButton) {
-      refreshButton.disabled = true;
-      refreshButton.textContent = "در حال بروزرسانی...";
-    }
+  $("#report-users").textContent = number(allUsers.length);
+  $("#report-students").textContent = number(allStudents.length);
 
+  let reportCount = 0;
+  let changeCount = 0;
+
+  const details = await Promise.all(allStudents.map(async student => {
     try {
-      const results = await Promise.allSettled([
-        loadDashboard(),
-        loadRequests()
+      const [reports, changes] = await Promise.all([
+        api(`/api/students/${student.id}/reports`),
+        api(`/api/students/${student.id}/change-requests`)
       ]);
 
-      const failed = results.find(
-        (result) => result.status === "rejected"
-      );
-
-      if (failed) {
-        handleError(failed.reason);
-      } else {
-        showToast("اطلاعات با موفقیت به‌روزرسانی شد.");
-      }
-    } finally {
-      isLoading = false;
-
-      if (refreshButton) {
-        refreshButton.disabled = false;
-        refreshButton.textContent =
-          originalText || "↻ به‌روزرسانی";
-      }
+      return {
+        reports: reports.reports || [],
+        changes: changes.requests || []
+      };
+    } catch {
+      return { reports: [], changes: [] };
     }
+  }));
+
+  for (const item of details) {
+    reportCount += item.reports.length;
+    changeCount += item.changes.length;
   }
 
-  /* =====================================
-     ورود و بررسی نشست
-  ===================================== */
-
-  async function checkAuthentication() {
-    // فرم ابتدا نمایش داده می‌شود و فقط پس از تأیید
-    // سرور، پنل مدیریت باز خواهد شد.
-    showLogin();
-
-    try {
-      const data = await api("/api/admin/me");
-
-      if (data.authenticated === true) {
-        showPanel();
-        setupStatusFilter();
-        await refreshAll();
-      } else {
-        showLogin();
-      }
-    } catch (error) {
-      console.error("Authentication check failed:", error);
-
-      showLogin(
-        "بررسی ورود ناموفق بود. اتصال سرور را بررسی کن."
-      );
-    }
-  }
-
-  if (loginForm) {
-    loginForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-
-      const password = passwordInput?.value || "";
-
-      if (!password) {
-        if (loginStatus) {
-          loginStatus.textContent = "رمز عبور را وارد کن.";
-        }
-
-        passwordInput?.focus();
-        return;
-      }
-
-      if (loginButton) {
-        loginButton.disabled = true;
-        loginButton.textContent = "در حال ورود...";
-      }
-
-      try {
-        const result = await api("/api/admin/login", {
-          method: "POST",
-          body: JSON.stringify({ password })
-        });
-
-        if (!result.authenticated) {
-          throw new Error("ورود تأیید نشد.");
-        }
-
-        if (passwordInput) {
-          passwordInput.value = "";
-        }
-
-        showPanel();
-        setupStatusFilter();
-
-        await refreshAll();
-
-        showToast("ورود با موفقیت انجام شد.");
-
-      } catch (error) {
-        console.error("Login failed:", error);
-
-        showLogin(
-          error.message || "ورود انجام نشد. دوباره تلاش کن."
-        );
-
-      } finally {
-        if (loginButton) {
-          loginButton.disabled = false;
-          loginButton.textContent = "ورود به پنل";
-        }
-      }
-    });
-  }
-
-  /* =====================================
-     خروج
-  ===================================== */
-
-  if (logoutButton) {
-    logoutButton.addEventListener("click", async () => {
-      logoutButton.disabled = true;
-
-      try {
-        await api("/api/admin/logout", {
-          method: "POST",
-          body: JSON.stringify({})
-        });
-
-        requests = [];
-
-        showLogin("از پنل مدیریت خارج شدی.");
-
-      } catch (error) {
-        handleError(error);
-
-      } finally {
-        logoutButton.disabled = false;
-      }
-    });
-  }
-
-  /* =====================================
-     تغییر وضعیت درخواست
-  ===================================== */
-
-  if (table) {
-    table.addEventListener("change", async (event) => {
-      const select = event.target.closest(
-        'select[data-action="status"]'
-      );
-
-      if (!select) return;
-
-      const row = select.closest("[data-request-id]");
-      const id = Number(row?.dataset.requestId);
-      const status = select.value;
-
-      if (!Number.isInteger(id) || id < 1) return;
-
-      if (!VALID_STATUSES.includes(status)) {
-        showToast("وضعیت انتخاب‌شده معتبر نیست.", "error");
-        return;
-      }
-
-      const request = requests.find(
-        (item) => Number(item.id) === id
-      );
-
-      const previousStatus = request?.status;
-
-      select.disabled = true;
-
-      try {
-        await api(`/api/admin/requests/${id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ status })
-        });
-
-        if (request) {
-          request.status = status;
-        }
-
-        renderRequests();
-
-        await loadDashboard();
-
-        showToast("وضعیت درخواست تغییر کرد.");
-
-      } catch (error) {
-        showToast(
-          error.message || "تغییر وضعیت انجام نشد.",
-          "error"
-        );
-
-        if (previousStatus) {
-          select.value = previousStatus;
-        }
-
-      } finally {
-        select.disabled = false;
-      }
-    });
-
-    /* ===================================
-       حذف درخواست
-    =================================== */
-
-    table.addEventListener("click", async (event) => {
-      const button = event.target.closest(
-        'button[data-action="delete"]'
-      );
-
-      if (!button) return;
-
-      const row = button.closest("[data-request-id]");
-      const id = Number(row?.dataset.requestId);
-
-      if (!Number.isInteger(id) || id < 1) return;
-
-      const confirmed = confirm(
-        "آیا از حذف این درخواست مطمئنی؟ این کار قابل بازگشت نیست."
-      );
-
-      if (!confirmed) return;
-
-      button.disabled = true;
-
-      try {
-        await api(`/api/admin/requests/${id}`, {
-          method: "DELETE"
-        });
-
-        requests = requests.filter(
-          (item) => Number(item.id) !== id
-        );
-
-        renderRequests();
-
-        await loadDashboard();
-
-        showToast("درخواست حذف شد.");
-
-      } catch (error) {
-        handleError(error);
-
-      } finally {
-        button.disabled = false;
-      }
-    });
-  }
-
-  /* =====================================
-     جست‌وجو و فیلتر
-  ===================================== */
-
-  if (searchInput) {
-    searchInput.addEventListener("input", renderRequests);
-  }
-
-  if (statusFilter) {
-    statusFilter.addEventListener("change", renderRequests);
-  }
-
-  if (refreshButton) {
-    refreshButton.addEventListener("click", refreshAll);
-  }
-
-  /* =====================================
-     مدیریت خطا
-  ===================================== */
-
-  function handleError(error) {
-    if (error?.status === 401) {
-      showLogin(
-        "نشست ورود معتبر نیست. لطفاً دوباره وارد شو."
-      );
-
+  $("#report-daily").textContent = number(reportCount);
+  $("#report-changes").textContent = number(changeCount);
+
+  requests = allRequests;
+} catch (error) {
+  showMessage(error.message, true);
+}
+
+}
+
+function exportRequests() {
+const columns = [
+["id", "شناسه"],
+["name", "نام"],
+["phone", "شماره تماس"],
+["grade", "پایه"],
+["service", "خدمت"],
+["message", "توضیحات"],
+["status", "وضعیت"],
+["created_at", "تاریخ ثبت"]
+];
+
+const csvCell = value =>
+  `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+const rows = [
+  columns.map(([, label]) => label),
+  ...requests.map(item => columns.map(([key]) => item[key] ?? ""))
+];
+
+const csv = "\uFEFF" + rows.map(row => row.map(csvCell).join(",")).join("\r\n");
+const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+const url = URL.createObjectURL(blob);
+const link = document.createElement("a");
+
+link.href = url;
+link.download = "zivari-requests.csv";
+document.body.appendChild(link);
+link.click();
+link.remove();
+URL.revokeObjectURL(url);
+
+}
+
+async function login(event) {
+event.preventDefault();
+
+const button = $("#login-button");
+const errorElement = $("#login-error");
+const password = $("#admin-password").value;
+
+button.disabled = true;
+errorElement.textContent = "";
+
+try {
+  await api("/api/admin/login", {
+    method: "POST",
+    body: JSON.stringify({ password })
+  });
+
+  $("#login-form").reset();
+  showApp();
+  openPage("dashboard");
+} catch (error) {
+  errorElement.textContent = error.message;
+} finally {
+  button.disabled = false;
+}
+
+}
+
+async function logout() {
+try {
+await api("/api/admin/logout", { method: "POST" });
+} catch {
+// نشست سمت سرور ممکن است قبلاً منقضی شده باشد.
+}
+
+showLogin();
+
+}
+
+async function initialize() {
+try {
+const result = await api("/api/admin/me");
+
+  if (result.authenticated) {
+    const me = await api("/api/auth/me");
+
+    if (me.user.role !== "admin") {
+      showLogin();
       return;
     }
 
-    console.error("Panel error:", error);
-
-    showToast(
-      error?.message || "خطایی رخ داد. دوباره تلاش کن.",
-      "error"
-    );
+    showApp();
+    openPage("dashboard");
+  } else {
+    showLogin();
   }
+} catch {
+  showLogin();
+}
 
-  /* =====================================
-     شروع برنامه
-  ===================================== */
+}
 
-  setupStatusFilter();
-  setupNavigation();
-  checkAuthentication();
+$("#login-form").addEventListener("submit", login);
+$("#logout-button").addEventListener("click", logout);
+$("#user-form").addEventListener("submit", createUser);
+$("#request-search").addEventListener("input", renderRequests);
+$("#request-status-filter").addEventListener("change", renderRequests);
+$("#refresh-button").addEventListener("click", () => {
+const active = $(".nav-item.active")?.dataset.page || "dashboard";
+openPage(active);
+});
 
+$("#export-requests").addEventListener("click", async () => {
+await loadRequests();
+exportRequests();
+});
+
+$("#close-student-details").addEventListener("click", () => {
+$("#student-details").hidden = true;
+activeStudentId = null;
+});
+
+document.addEventListener("click", event => {
+const target = event.target.closest("button");
+if (!target) return;
+
+if (target.dataset.page) {
+  openPage(target.dataset.page);
+}
+
+if (target.dataset.goto) {
+  openPage(target.dataset.goto);
+}
+
+if (target.dataset.requestDetail) {
+  const id = Number(target.dataset.requestDetail);
+
+  if (!requests.length) {
+    loadRequests().then(() => showRequestDetails(id));
+  } else {
+    showRequestDetails(id);
+  }
+}
+
+if (target.dataset.deleteRequest) {
+  deleteRequest(Number(target.dataset.deleteRequest));
+}
+
+if (target.dataset.openStudent) {
+  openStudent(Number(target.dataset.openStudent));
+}
+
+if (target.dataset.saveFeedback) {
+  saveFeedback(Number(target.dataset.saveFeedback));
+}
+
+if (target.dataset.changeAction) {
+  updateChangeRequest(
+    Number(target.dataset.changeAction),
+    target.dataset.changeStatus
+  );
+}
+
+});
+
+document.addEventListener("change", event => {
+const select = event.target.closest("[data-status-id]");
+if (!select) return;
+
+updateRequestStatus(Number(select.dataset.statusId), select.value);
+
+});
+
+initialize();
 })();
