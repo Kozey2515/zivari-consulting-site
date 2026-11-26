@@ -1,3 +1,4 @@
+
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
@@ -7,12 +8,14 @@ const Database = require("better-sqlite3");
 const session = require("cookie-session");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const multer = require("multer");
 
 const app = express();
 
 const PORT = Number(process.env.PORT) || 3000;
 const ROOT = __dirname;
 const DATA = path.join(ROOT, "data");
+const UPLOADS = path.join(DATA, "uploads");
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
@@ -24,16 +27,15 @@ if (IS_PRODUCTION && (!ADMIN_PASSWORD || SESSION_SECRET.length < 32)) {
   process.exit(1);
 }
 
-if (!fs.existsSync(DATA)) {
-  fs.mkdirSync(DATA, { recursive: true });
-}
+fs.mkdirSync(DATA, { recursive: true });
+fs.mkdirSync(UPLOADS, { recursive: true });
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(express.json({ limit: "100kb" }));
-app.use(express.urlencoded({ extended: true, limit: "100kb" }));
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 app.use(session({
   name: "zivari_session",
@@ -46,7 +48,7 @@ app.use(session({
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 100,
+  limit: 150,
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -130,6 +132,37 @@ CREATE TABLE IF NOT EXISTS change_requests (
   counselor_reply TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
 );
+
+CREATE TABLE IF NOT EXISTS content_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL CHECK(type IN ('article','video','podcast')),
+  title TEXT NOT NULL,
+  summary TEXT DEFAULT '',
+  body TEXT DEFAULT '',
+  category TEXT DEFAULT '',
+  cover_url TEXT DEFAULT '',
+  media_url TEXT DEFAULT '',
+  external_url TEXT DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'draft'
+    CHECK(status IN ('draft','published')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS media_assets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  original_name TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  size INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+);
+
+CREATE TABLE IF NOT EXISTS site_settings (
+  setting_key TEXT PRIMARY KEY,
+  setting_value TEXT NOT NULL DEFAULT ''
+);
 `);
 
 function clean(value, max = 200) {
@@ -196,9 +229,9 @@ function canAccessStudent(user, student) {
   }
 
   if (user.role === "student") {
-    return db.prepare(
+    return !!db.prepare(
       "SELECT id FROM students WHERE id = ? AND user_id = ?"
-    ).get(student.id, user.id) !== undefined;
+    ).get(student.id, user.id);
   }
 
   return false;
@@ -218,7 +251,7 @@ function studentAccess(req, res, next) {
   next();
 }
 
-/* مدیر اولیه از تنظیمات محیطی ساخته می‌شود. */
+/* مدیر اولیه */
 if (ADMIN_PASSWORD) {
   const existing = db.prepare(
     "SELECT id FROM users WHERE username = ?"
@@ -236,7 +269,87 @@ if (ADMIN_PASSWORD) {
   }
 }
 
-/* درخواست‌های مشاوره‌ی قبلی */
+/* =========================
+   آپلود و مدیریت فایل‌ها
+========================= */
+
+const allowedMimeTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "audio/mpeg",
+  "audio/mp4",
+  "audio/ogg",
+  "audio/wav",
+  "audio/webm",
+  "video/mp4",
+  "video/webm"
+]);
+
+const extensionByMime = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+  "image/gif": ".gif",
+  "audio/mpeg": ".mp3",
+  "audio/mp4": ".m4a",
+  "audio/ogg": ".ogg",
+  "audio/wav": ".wav",
+  "audio/webm": ".webm",
+  "video/mp4": ".mp4",
+  "video/webm": ".webm"
+};
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOADS),
+  filename: (req, file, cb) => {
+    const ext = extensionByMime[file.mimetype];
+    cb(null, crypto.randomUUID() + ext);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 15 * 1024 * 1024,
+    files: 1
+  },
+  fileFilter: (req, file, cb) => {
+    if (!allowedMimeTypes.has(file.mimetype)) {
+      return cb(new Error("فرمت این فایل پشتیبانی نمی‌شود."));
+    }
+    cb(null, true);
+  }
+});
+
+app.use("/uploads", express.static(UPLOADS, {
+  index: false,
+  dotfiles: "deny",
+  setHeaders: (res) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "public, max-age=604800");
+  }
+}));
+
+function deleteUploadedFile(url) {
+  if (!url || typeof url !== "string") return;
+
+  const prefix = "/uploads/";
+  if (!url.startsWith(prefix)) return;
+
+  const fileName = path.basename(url.slice(prefix.length));
+  const filePath = path.join(UPLOADS, fileName);
+
+  if (filePath.startsWith(UPLOADS + path.sep) && fs.existsSync(filePath)) {
+    fs.unlink(filePath, () => {});
+  }
+}
+
+/* =========================
+   درخواست‌های مشاوره
+========================= */
+
 app.post("/api/requests", (req, res) => {
   const name = clean(req.body?.name, 120);
   const phone = clean(req.body?.phone, 40);
@@ -265,7 +378,10 @@ app.post("/api/requests", (req, res) => {
   }
 });
 
-/* ورود */
+/* =========================
+   ورود و خروج
+========================= */
+
 app.post("/api/auth/login", loginLimiter, async (req, res) => {
   try {
     const username = clean(req.body?.username, 80);
@@ -314,7 +430,7 @@ app.get("/api/auth/me", auth, (req, res) => {
   res.json({ user: req.user });
 });
 
-/* سازگاری با صفحه‌ی مدیریت قبلی */
+/* سازگاری با پنل مدیریت قبلی */
 app.post("/api/admin/login", loginLimiter, async (req, res) => {
   try {
     const password = typeof req.body?.password === "string"
@@ -348,10 +464,12 @@ app.post("/api/admin/logout", (req, res) => {
 
 app.get("/api/admin/me", (req, res) => {
   noCache(res);
-  res.json({
-    authenticated: !!req.session?.user
-  });
+  res.json({ authenticated: !!req.session?.user });
 });
+
+/* =========================
+   داشبورد و درخواست‌ها
+========================= */
 
 app.get("/api/admin/dashboard", auth, roles("admin"), (req, res) => {
   const stats = db.prepare(`
@@ -404,7 +522,10 @@ app.delete("/api/admin/requests/:id", auth, roles("admin"), (req, res) => {
   res.json({ ok: true });
 });
 
-/* ساخت حساب */
+/* =========================
+   کاربران
+========================= */
+
 app.get("/api/users", auth, roles("admin"), (req, res) => {
   const users = db.prepare(`
     SELECT id, username, full_name, role, phone, active, created_at
@@ -463,7 +584,10 @@ app.post("/api/users", auth, roles("admin"), async (req, res) => {
   }
 });
 
-/* فهرست دانش‌آموزان */
+/* =========================
+   دانش‌آموزان
+========================= */
+
 app.get("/api/students", auth, roles("admin", "counselor"), (req, res) => {
   const students = req.user.role === "admin"
     ? db.prepare(`
@@ -660,7 +784,321 @@ app.patch("/api/change-requests/:id", auth, roles("admin", "counselor"), (req, r
   res.json({ ok: true });
 });
 
-/* تنظیمات تماس عمومی */
+/* =========================
+   مدیریت محتوای سایت
+========================= */
+
+const validContentTypes = ["article", "video", "podcast"];
+const validContentStatuses = ["draft", "published"];
+
+function contentInput(body) {
+  const type = clean(body?.type, 20);
+  const title = clean(body?.title, 180);
+  const summary = clean(body?.summary, 1000);
+  const bodyText = typeof body?.body === "string"
+    ? body.body.slice(0, 30000)
+    : "";
+  const category = clean(body?.category, 100);
+  const coverUrl = clean(body?.cover_url, 500);
+  const mediaUrl = clean(body?.media_url, 500);
+  const externalUrl = clean(body?.external_url, 1000);
+  const status = clean(body?.status, 20);
+
+  if (!validContentTypes.includes(type)) {
+    throw new Error("نوع محتوا معتبر نیست.");
+  }
+
+  if (!title) {
+    throw new Error("عنوان محتوا الزامی است.");
+  }
+
+  if (!validContentStatuses.includes(status)) {
+    throw new Error("وضعیت انتشار معتبر نیست.");
+  }
+
+  return {
+    type,
+    title,
+    summary,
+    body: bodyText,
+    category,
+    cover_url: coverUrl,
+    media_url: mediaUrl,
+    external_url: externalUrl,
+    status
+  };
+}
+
+/* محتوای منتشرشده برای سایت */
+app.get("/api/content", (req, res) => {
+  const type = clean(req.query?.type, 20);
+
+  let items;
+
+  if (validContentTypes.includes(type)) {
+    items = db.prepare(`
+      SELECT id, type, title, summary, category, cover_url,
+        media_url, external_url, created_at, updated_at
+      FROM content_items
+      WHERE status='published' AND type=?
+      ORDER BY id DESC
+    `).all(type);
+  } else {
+    items = db.prepare(`
+      SELECT id, type, title, summary, category, cover_url,
+        media_url, external_url, created_at, updated_at
+      FROM content_items
+      WHERE status='published'
+      ORDER BY id DESC
+    `).all();
+  }
+
+  noCache(res);
+  res.json({ items });
+});
+
+/* جزئیات یک محتوای منتشرشده */
+app.get("/api/content/:id", (req, res) => {
+  const id = idOf(req.params.id);
+  if (!id) return fail(res, 400, "شناسه محتوا معتبر نیست.");
+
+  const item = db.prepare(`
+    SELECT * FROM content_items
+    WHERE id=? AND status='published'
+  `).get(id);
+
+  if (!item) return fail(res, 404, "محتوا پیدا نشد.");
+
+  noCache(res);
+  res.json({ item });
+});
+
+/* فهرست همه محتواها در پنل */
+app.get("/api/admin/content", auth, roles("admin"), (req, res) => {
+  const items = db.prepare(`
+    SELECT * FROM content_items ORDER BY id DESC
+  `).all();
+
+  noCache(res);
+  res.json({ items });
+});
+
+/* ایجاد محتوا */
+app.post("/api/admin/content", auth, roles("admin"), (req, res) => {
+  try {
+    const item = contentInput(req.body);
+
+    const result = db.prepare(`
+      INSERT INTO content_items
+        (type, title, summary, body, category, cover_url,
+         media_url, external_url, status)
+      VALUES
+        (@type, @title, @summary, @body, @category, @cover_url,
+         @media_url, @external_url, @status)
+    `).run(item);
+
+    noCache(res);
+    res.status(201).json({
+      ok: true,
+      id: result.lastInsertRowid
+    });
+  } catch (error) {
+    fail(res, 400, error.message || "ثبت محتوا ناموفق بود.");
+  }
+});
+
+/* ویرایش محتوا */
+app.put("/api/admin/content/:id", auth, roles("admin"), (req, res) => {
+  const id = idOf(req.params.id);
+  if (!id) return fail(res, 400, "شناسه محتوا معتبر نیست.");
+
+  try {
+    const item = contentInput(req.body);
+
+    const result = db.prepare(`
+      UPDATE content_items SET
+        type=@type,
+        title=@title,
+        summary=@summary,
+        body=@body,
+        category=@category,
+        cover_url=@cover_url,
+        media_url=@media_url,
+        external_url=@external_url,
+        status=@status,
+        updated_at=datetime('now','localtime')
+      WHERE id=@id
+    `).run({ ...item, id });
+
+    if (!result.changes) return fail(res, 404, "محتوا پیدا نشد.");
+
+    noCache(res);
+    res.json({ ok: true });
+  } catch (error) {
+    fail(res, 400, error.message || "ویرایش محتوا ناموفق بود.");
+  }
+});
+
+/* حذف محتوا */
+app.delete("/api/admin/content/:id", auth, roles("admin"), (req, res) => {
+  const id = idOf(req.params.id);
+  if (!id) return fail(res, 400, "شناسه محتوا معتبر نیست.");
+
+  const item = db.prepare(
+    "SELECT cover_url, media_url FROM content_items WHERE id=?"
+  ).get(id);
+
+  if (!item) return fail(res, 404, "محتوا پیدا نشد.");
+
+  db.prepare("DELETE FROM content_items WHERE id=?").run(id);
+
+  deleteUploadedFile(item.cover_url);
+  deleteUploadedFile(item.media_url);
+
+  noCache(res);
+  res.json({ ok: true });
+});
+
+/* =========================
+   کتابخانه رسانه و آپلود
+========================= */
+
+app.post(
+  "/api/admin/upload",
+  auth,
+  roles("admin"),
+  (req, res, next) => {
+    upload.single("file")(req, res, (error) => {
+      if (error) {
+        const message = error.code === "LIMIT_FILE_SIZE"
+          ? "حجم فایل نباید بیشتر از ۱۵ مگابایت باشد."
+          : error.message || "آپلود فایل ناموفق بود.";
+        return fail(res, 400, message);
+      }
+      next();
+    });
+  },
+  (req, res) => {
+    if (!req.file) return fail(res, 400, "فایلی انتخاب نشده است.");
+
+    const url = "/uploads/" + req.file.filename;
+
+    const result = db.prepare(`
+      INSERT INTO media_assets
+        (original_name, file_name, url, mime_type, size)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(
+      clean(req.file.originalname, 250),
+      req.file.filename,
+      url,
+      req.file.mimetype,
+      req.file.size
+    );
+
+    noCache(res);
+    res.status(201).json({
+      ok: true,
+      asset: {
+        id: result.lastInsertRowid,
+        name: req.file.originalname,
+        url,
+        mime_type: req.file.mimetype,
+        size: req.file.size
+      }
+    });
+  }
+);
+
+app.get("/api/admin/media", auth, roles("admin"), (req, res) => {
+  const assets = db.prepare(`
+    SELECT id, original_name, url, mime_type, size, created_at
+    FROM media_assets ORDER BY id DESC
+  `).all();
+
+  noCache(res);
+  res.json({ assets });
+});
+
+app.delete("/api/admin/media/:id", auth, roles("admin"), (req, res) => {
+  const id = idOf(req.params.id);
+  if (!id) return fail(res, 400, "شناسه فایل معتبر نیست.");
+
+  const asset = db.prepare(
+    "SELECT * FROM media_assets WHERE id=?"
+  ).get(id);
+
+  if (!asset) return fail(res, 404, "فایل پیدا نشد.");
+
+  db.prepare("DELETE FROM media_assets WHERE id=?").run(id);
+  deleteUploadedFile(asset.url);
+
+  noCache(res);
+  res.json({ ok: true });
+});
+
+/* =========================
+   تنظیمات صفحه اصلی
+========================= */
+
+app.get("/api/site-settings", (req, res) => {
+  const rows = db.prepare(
+    "SELECT setting_key, setting_value FROM site_settings"
+  ).all();
+
+  const settings = {};
+  for (const row of rows) {
+    settings[row.setting_key] = row.setting_value;
+  }
+
+  noCache(res);
+  res.json({ settings });
+});
+
+app.get("/api/admin/site-settings", auth, roles("admin"), (req, res) => {
+  const rows = db.prepare(
+    "SELECT setting_key, setting_value FROM site_settings"
+  ).all();
+
+  const settings = {};
+  for (const row of rows) {
+    settings[row.setting_key] = row.setting_value;
+  }
+
+  noCache(res);
+  res.json({ settings });
+});
+
+app.put("/api/admin/site-settings", auth, roles("admin"), (req, res) => {
+  const settings = req.body?.settings;
+
+  if (!settings || typeof settings !== "object" || Array.isArray(settings)) {
+    return fail(res, 400, "ساختار تنظیمات معتبر نیست.");
+  }
+
+  const save = db.prepare(`
+    INSERT INTO site_settings (setting_key, setting_value)
+    VALUES (?, ?)
+    ON CONFLICT(setting_key)
+    DO UPDATE SET setting_value=excluded.setting_value
+  `);
+
+  const transaction = db.transaction((entries) => {
+    for (const [key, value] of entries) {
+      if (!/^[a-zA-Z0-9_-]{1,80}$/.test(key)) continue;
+      save.run(key, clean(String(value ?? ""), 2000));
+    }
+  });
+
+  transaction(Object.entries(settings));
+
+  noCache(res);
+  res.json({ ok: true });
+});
+
+/* =========================
+   تنظیمات تماس عمومی
+========================= */
+
 app.get("/api/contact-config", (req, res) => {
   noCache(res);
   res.json({
@@ -669,11 +1107,20 @@ app.get("/api/contact-config", (req, res) => {
   });
 });
 
-/* فایل‌های عمومی */
+/* =========================
+   فایل‌های عمومی سایت
+========================= */
+
 const publicFiles = [
-  "index.html", "style.css", "app.js",
-  "admin.html", "admin.css", "admin.js",
-  "portal.html", "portal.css", "portal.js"
+  "index.html",
+  "style.css",
+  "app.js",
+  "admin.html",
+  "admin.css",
+  "admin.js",
+  "portal.html",
+  "portal.css",
+  "portal.js"
 ];
 
 for (const file of publicFiles) {
