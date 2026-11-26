@@ -4,214 +4,933 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#090c11">
+  <meta name="theme-color" content="#0d1117">
   <meta name="robots" content="noindex, nofollow">
+
   <title>مرکز مدیریت زیوری</title>
-  <link rel="stylesheet" href="/admin.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="/admin.css?v=20261126-2">
 </head>
+
 <body>
+
+  <!-- LOGIN -->
   <div id="login-view" class="login-view">
+
     <form id="login-form" class="login-card">
+
       <div class="brand-mark">Z</div>
+
       <span class="eyebrow">ZIVARI MANAGEMENT</span>
+
       <h1>مرکز مدیریت زیوری</h1>
+
       <p>برای ورود به فضای مدیریت، رمز عبور خود را وارد کنید.</p>
+
       <label for="admin-password">رمز عبور مدیر</label>
-      <input id="admin-password" name="password" type="password" autocomplete="current-password" required>
-      <button type="submit" id="login-button">ورود به پنل</button>
+
+      <input
+        id="admin-password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        required
+      >
+
+      <button type="submit" id="login-button">
+        ورود به پنل
+      </button>
+
       <p id="login-error" class="error-message" role="alert"></p>
+
     </form>
+
   </div>
 
+
+  <!-- ADMIN APPLICATION -->
   <div id="admin-app" class="admin-layout" hidden>
+
+    <!-- SIDEBAR -->
     <aside class="sidebar">
+
       <div class="sidebar-brand">
+
         <div class="brand-mark">Z</div>
-        <div><strong>زیوری</strong><small>مرکز مدیریت</small></div>
+
+        <div>
+          <strong>زیوری</strong>
+          <small>مرکز مدیریت</small>
+        </div>
+
       </div>
+
 
       <div class="sidebar-label">مدیریت مجموعه</div>
+
       <nav class="sidebar-nav" aria-label="منوی مدیریت">
-        <button class="nav-item active" data-page="dashboard">◈ داشبورد</button>
-        <button class="nav-item" data-page="requests">▤ درخواست‌های مشاوره</button>
-        <button class="nav-item" data-page="users">♙ مدیریت کاربران</button>
-        <button class="nav-item" data-page="students">♧ دانش‌آموزان</button>
-        <button class="nav-item" data-page="reports">▥ گزارش‌ها</button>
+
+        <button class="nav-item active" data-page="dashboard">
+          ◈ داشبورد
+        </button>
+
+        <button class="nav-item" data-page="requests">
+          ▤ درخواست‌های مشاوره
+        </button>
+
+        <button class="nav-item" data-page="users">
+          ♙ مدیریت کاربران
+        </button>
+
+        <button class="nav-item" data-page="students">
+          ♧ دانش‌آموزان
+        </button>
+
+        <button class="nav-item" data-page="reports">
+          ▥ گزارش‌ها
+        </button>
+
       </nav>
+
 
       <div class="sidebar-label">رسانه و محتوا</div>
+
       <nav class="sidebar-nav">
-        <button class="nav-item" data-page="content">✎ همه محتواها</button>
-        <button class="nav-item" data-page="articles">▧ مقاله‌ها</button>
-        <button class="nav-item" data-page="videos">▷ ویدئوها</button>
-        <button class="nav-item" data-page="podcasts">♫ پادکست‌ها</button>
-        <button class="nav-item" data-page="media">▦ کتابخانه رسانه</button>
-        <button class="nav-item" data-page="settings">⚙ تنظیمات سایت</button>
+
+        <button class="nav-item" data-page="content">
+          ✎ همه محتواها
+        </button>
+
+        <button class="nav-item" data-page="articles">
+          ▧ مقاله‌ها
+        </button>
+
+        <button class="nav-item" data-page="videos">
+          ▷ ویدئوها
+        </button>
+
+        <button class="nav-item" data-page="podcasts">
+          ♫ پادکست‌ها
+        </button>
+
+        <button class="nav-item" data-page="media">
+          ▦ کتابخانه رسانه
+        </button>
+
+        <button class="nav-item" data-page="settings">
+          ⚙ تنظیمات سایت
+        </button>
+
       </nav>
 
+
       <div class="sidebar-footer">
+
         <span>پیشرفت همراه با آرامش</span>
-        <button id="logout-button" class="logout-button">خروج از حساب</button>
+
+        <button id="logout-button" class="logout-button">
+          خروج از حساب
+        </button>
+
       </div>
+
     </aside>
 
+
+    <!-- MAIN CONTENT -->
     <main class="main-content">
+
       <header class="topbar">
+
         <div>
+
           <span class="eyebrow">ZIVARI / ADMIN PANEL</span>
+
           <h1 id="page-title">داشبورد</h1>
-          <p id="page-description">نمای کلی عملکرد مجموعه</p>
+
+          <p id="page-description">
+            نمای کلی عملکرد مجموعه
+          </p>
+
         </div>
-        <button id="refresh-button" class="secondary-button">↻ به‌روزرسانی</button>
+
+        <button id="refresh-button" class="secondary-button">
+          ↻ به‌روزرسانی
+        </button>
+
       </header>
 
-      <div id="global-message" class="global-message" role="status"></div>
 
+      <div
+        id="global-message"
+        class="global-message"
+        role="status"
+      ></div>
+
+
+      <!-- DASHBOARD -->
       <section id="page-dashboard" class="page-section">
+
         <div class="welcome-card">
-          <div><span class="eyebrow">WELCOME BACK</span><h2>به مرکز مدیریت زیوری خوش آمدید</h2><p>از این بخش می‌تونی محتوای سایت و درخواست‌های مشاوره رو مدیریت کنی.</p></div>
-          <div class="welcome-symbol">Z</div>
-        </div>
-        <div class="stats-grid">
-          <article class="stat-card"><span>کل درخواست‌ها</span><strong id="stat-total">۰</strong></article>
-          <article class="stat-card"><span>درخواست‌های جدید</span><strong id="stat-new">۰</strong></article>
-          <article class="stat-card"><span>در انتظار پیگیری</span><strong id="stat-pending">۰</strong></article>
-          <article class="stat-card"><span>تکمیل‌شده</span><strong id="stat-completed">۰</strong></article>
-        </div>
-        <article class="panel-card">
-          <div class="panel-heading"><div><span class="eyebrow">LATEST REQUESTS</span><h2>آخرین درخواست‌ها</h2></div><button class="text-button" data-goto="requests">مشاهده همه ←</button></div>
-          <div class="table-wrap"><table><thead><tr><th>نام</th><th>شماره تماس</th><th>خدمت درخواستی</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody id="recent-requests"></tbody></table></div>
-        </article>
-      </section>
 
-      <section id="page-requests" class="page-section" hidden>
-        <article class="panel-card">
-          <div class="panel-heading"><div><span class="eyebrow">CONSULTATION REQUESTS</span><h2>درخواست‌های مشاوره</h2></div></div>
-          <div class="toolbar">
-            <input id="request-search" type="search" placeholder="جست‌وجوی نام یا شماره تماس">
-            <select id="request-status-filter"><option value="">همه وضعیت‌ها</option><option value="new">جدید</option><option value="contacted">در حال پیگیری</option><option value="done">تکمیل‌شده</option><option value="cancelled">لغوشده</option></select>
+          <div>
+
+            <span class="eyebrow">WELCOME BACK</span>
+
+            <h2>به مرکز مدیریت زیوری خوش آمدید</h2>
+
+            <p>
+              از این بخش می‌تونی محتوای سایت و درخواست‌های مشاوره رو مدیریت کنی.
+            </p>
+
           </div>
-          <div class="table-wrap"><table><thead><tr><th>نام</th><th>تماس</th><th>پایه</th><th>خدمت</th><th>تاریخ ثبت</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody id="requests-table"></tbody></table></div>
-        </article>
-      </section>
 
-      <section id="page-users" class="page-section" hidden>
-        <article class="panel-card">
-          <div class="panel-heading"><div><span class="eyebrow">ACCOUNT MANAGEMENT</span><h2>ساخت حساب کاربری</h2></div></div>
-          <form id="user-form" class="form-grid">
-            <label>نام و نام خانوادگی<input name="full_name" maxlength="120" required></label>
-            <label>نام کاربری<input name="username" minlength="3" maxlength="80" pattern="[a-zA-Z0-9_.-]{3,80}" required></label>
-            <label>رمز عبور<input name="password" type="password" minlength="10" maxlength="1024" autocomplete="new-password" required></label>
-            <label>نقش<select name="role" required><option value="student">دانش‌آموز</option><option value="counselor">مشاور</option></select></label>
-            <label>شماره تماس<input name="phone" maxlength="40"></label>
-            <div class="form-actions"><button type="submit">ایجاد حساب</button></div>
-          </form>
-        </article>
-        <article class="panel-card">
-          <div class="panel-heading"><h2>فهرست کاربران</h2></div>
-          <div class="table-wrap"><table><thead><tr><th>نام</th><th>نام کاربری</th><th>نقش</th><th>شماره تماس</th><th>وضعیت حساب</th></tr></thead><tbody id="users-table"></tbody></table></div>
-        </article>
-      </section>
+          <div class="welcome-symbol">Z</div>
 
-      <section id="page-students" class="page-section" hidden>
-        <article class="panel-card">
-          <div class="panel-heading"><h2>پرونده دانش‌آموزان</h2></div>
-          <div class="table-wrap"><table><thead><tr><th>نام دانش‌آموز</th><th>کد دانش‌آموزی</th><th>پایه</th><th>شناسه پرونده</th><th>عملیات</th></tr></thead><tbody id="students-table"></tbody></table></div>
-        </article>
-        <article id="student-details" class="panel-card" hidden>
-          <div class="panel-heading"><h2 id="student-details-title">جزئیات پرونده</h2><button id="close-student-details" class="secondary-button">بستن</button></div>
-          <h3>برنامه‌های درسی</h3><div id="student-plans" class="data-list"></div>
-          <h3>گزارش‌های روزانه</h3><div id="student-reports" class="data-list"></div>
-          <h3>درخواست‌های تغییر برنامه</h3><div id="student-change-requests" class="data-list"></div>
-        </article>
-      </section>
-
-      <section id="page-reports" class="page-section" hidden>
-        <div class="stats-grid">
-          <article class="stat-card"><span>کل کاربران</span><strong id="report-users">۰</strong></article>
-          <article class="stat-card"><span>تعداد دانش‌آموزان</span><strong id="report-students">۰</strong></article>
-          <article class="stat-card"><span>کل گزارش‌های روزانه</span><strong id="report-daily">۰</strong></article>
-          <article class="stat-card"><span>درخواست‌های تغییر برنامه</span><strong id="report-changes">۰</strong></article>
         </div>
-        <article class="panel-card"><div class="panel-heading"><h2>گزارش درخواست‌های مشاوره</h2><button id="export-requests" class="secondary-button">خروجی CSV</button></div><p>برای دریافت گزارش کامل درخواست‌ها، فایل CSV را دریافت کنید.</p></article>
+
+
+        <div class="stats-grid">
+
+          <article class="stat-card">
+            <span>کل درخواست‌ها</span>
+            <strong id="stat-total">۰</strong>
+          </article>
+
+          <article class="stat-card">
+            <span>درخواست‌های جدید</span>
+            <strong id="stat-new">۰</strong>
+          </article>
+
+          <article class="stat-card">
+            <span>در انتظار پیگیری</span>
+            <strong id="stat-pending">۰</strong>
+          </article>
+
+          <article class="stat-card">
+            <span>تکمیل‌شده</span>
+            <strong id="stat-completed">۰</strong>
+          </article>
+
+        </div>
+
+
+        <article class="panel-card">
+
+          <div class="panel-heading">
+
+            <div>
+              <span class="eyebrow">LATEST REQUESTS</span>
+              <h2>آخرین درخواست‌ها</h2>
+            </div>
+
+            <button class="text-button" data-goto="requests">
+              مشاهده همه ←
+            </button>
+
+          </div>
+
+          <div class="table-wrap">
+
+            <table>
+
+              <thead>
+                <tr>
+                  <th>نام</th>
+                  <th>شماره تماس</th>
+                  <th>خدمت درخواستی</th>
+                  <th>وضعیت</th>
+                  <th>عملیات</th>
+                </tr>
+              </thead>
+
+              <tbody id="recent-requests"></tbody>
+
+            </table>
+
+          </div>
+
+        </article>
+
       </section>
 
+
+      <!-- REQUESTS -->
+      <section id="page-requests" class="page-section" hidden>
+
+        <article class="panel-card">
+
+          <div class="panel-heading">
+
+            <div>
+              <span class="eyebrow">CONSULTATION REQUESTS</span>
+              <h2>درخواست‌های مشاوره</h2>
+            </div>
+
+          </div>
+
+          <div class="toolbar">
+
+            <input
+              id="request-search"
+              type="search"
+              placeholder="جست‌وجوی نام یا شماره تماس"
+            >
+
+            <select id="request-status-filter">
+              <option value="">همه وضعیت‌ها</option>
+              <option value="new">جدید</option>
+              <option value="contacted">در حال پیگیری</option>
+              <option value="done">تکمیل‌شده</option>
+              <option value="cancelled">لغوشده</option>
+            </select>
+
+          </div>
+
+          <div class="table-wrap">
+
+            <table>
+
+              <thead>
+                <tr>
+                  <th>نام</th>
+                  <th>تماس</th>
+                  <th>پایه</th>
+                  <th>خدمت</th>
+                  <th>تاریخ ثبت</th>
+                  <th>وضعیت</th>
+                  <th>عملیات</th>
+                </tr>
+              </thead>
+
+              <tbody id="requests-table"></tbody>
+
+            </table>
+
+          </div>
+
+        </article>
+
+      </section>
+
+
+      <!-- USERS -->
+      <section id="page-users" class="page-section" hidden>
+
+        <article class="panel-card">
+
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">ACCOUNT MANAGEMENT</span>
+              <h2>ساخت حساب کاربری</h2>
+            </div>
+          </div>
+
+          <form id="user-form" class="form-grid">
+
+            <label>
+              نام و نام خانوادگی
+              <input name="full_name" maxlength="120" required>
+            </label>
+
+            <label>
+              نام کاربری
+              <input
+                name="username"
+                minlength="3"
+                maxlength="80"
+                pattern="[a-zA-Z0-9_.-]{3,80}"
+                required
+              >
+            </label>
+
+            <label>
+              رمز عبور
+              <input
+                name="password"
+                type="password"
+                minlength="10"
+                maxlength="1024"
+                autocomplete="new-password"
+                required
+              >
+            </label>
+
+            <label>
+              نقش
+              <select name="role" required>
+                <option value="student">دانش‌آموز</option>
+                <option value="counselor">مشاور</option>
+              </select>
+            </label>
+
+            <label>
+              شماره تماس
+              <input name="phone" maxlength="40">
+            </label>
+
+            <div class="form-actions">
+              <button type="submit">ایجاد حساب</button>
+            </div>
+
+          </form>
+
+        </article>
+
+
+        <article class="panel-card">
+
+          <div class="panel-heading">
+            <h2>فهرست کاربران</h2>
+          </div>
+
+          <div class="table-wrap">
+
+            <table>
+
+              <thead>
+                <tr>
+                  <th>نام</th>
+                  <th>نام کاربری</th>
+                  <th>نقش</th>
+                  <th>شماره تماس</th>
+                  <th>وضعیت حساب</th>
+                </tr>
+              </thead>
+
+              <tbody id="users-table"></tbody>
+
+            </table>
+
+          </div>
+
+        </article>
+
+      </section>
+
+
+      <!-- STUDENTS -->
+      <section id="page-students" class="page-section" hidden>
+
+        <article class="panel-card">
+
+          <div class="panel-heading">
+            <h2>پرونده دانش‌آموزان</h2>
+          </div>
+
+          <div class="table-wrap">
+
+            <table>
+
+              <thead>
+                <tr>
+                  <th>نام دانش‌آموز</th>
+                  <th>کد دانش‌آموزی</th>
+                  <th>پایه</th>
+                  <th>شناسه پرونده</th>
+                  <th>عملیات</th>
+                </tr>
+              </thead>
+
+              <tbody id="students-table"></tbody>
+
+            </table>
+
+          </div>
+
+        </article>
+
+
+        <article id="student-details" class="panel-card" hidden>
+
+          <div class="panel-heading">
+
+            <h2 id="student-details-title">جزئیات پرونده</h2>
+
+            <button id="close-student-details" class="secondary-button">
+              بستن
+            </button>
+
+          </div>
+
+          <h3>برنامه‌های درسی</h3>
+          <div id="student-plans" class="data-list"></div>
+
+          <h3>گزارش‌های روزانه</h3>
+          <div id="student-reports" class="data-list"></div>
+
+          <h3>درخواست‌های تغییر برنامه</h3>
+          <div id="student-change-requests" class="data-list"></div>
+
+        </article>
+
+      </section>
+
+
+      <!-- REPORTS -->
+      <section id="page-reports" class="page-section" hidden>
+
+        <div class="stats-grid">
+
+          <article class="stat-card">
+            <span>کل کاربران</span>
+            <strong id="report-users">۰</strong>
+          </article>
+
+          <article class="stat-card">
+            <span>تعداد دانش‌آموزان</span>
+            <strong id="report-students">۰</strong>
+          </article>
+
+          <article class="stat-card">
+            <span>کل گزارش‌های روزانه</span>
+            <strong id="report-daily">۰</strong>
+          </article>
+
+          <article class="stat-card">
+            <span>درخواست‌های تغییر برنامه</span>
+            <strong id="report-changes">۰</strong>
+          </article>
+
+        </div>
+
+
+        <article class="panel-card">
+
+          <div class="panel-heading">
+
+            <h2>گزارش درخواست‌های مشاوره</h2>
+
+            <button id="export-requests" class="secondary-button">
+              خروجی CSV
+            </button>
+
+          </div>
+
+          <p>
+            برای دریافت گزارش کامل درخواست‌ها، فایل CSV را دریافت کنید.
+          </p>
+
+        </article>
+
+      </section>
+
+
+      <!-- ALL CONTENT -->
       <section id="page-content" class="page-section" hidden>
+
         <article class="panel-card">
-          <div class="panel-heading"><div><span class="eyebrow">CONTENT STUDIO</span><h2>مدیریت محتوای سایت</h2></div><button class="primary-button" id="new-content-button">＋ محتوای جدید</button></div>
-          <p class="muted">مقاله، ویدئو و پادکست رو از این قسمت ایجاد، ویرایش یا منتشر کن.</p>
-          <div class="toolbar"><input id="content-search" type="search" placeholder="جست‌وجوی عنوان محتوا"><select id="content-status-filter"><option value="">همه وضعیت‌ها</option><option value="published">منتشرشده</option><option value="draft">پیش‌نویس</option></select></div>
-          <div class="content-tabs"><button class="content-filter active" data-content-filter="all">همه</button><button class="content-filter" data-content-filter="article">مقاله‌ها</button><button class="content-filter" data-content-filter="video">ویدئوها</button><button class="content-filter" data-content-filter="podcast">پادکست‌ها</button></div>
+
+          <div class="panel-heading">
+
+            <div>
+              <span class="eyebrow">CONTENT STUDIO</span>
+              <h2>مدیریت محتوای سایت</h2>
+            </div>
+
+            <button class="primary-button" id="new-content-button">
+              ＋ محتوای جدید
+            </button>
+
+          </div>
+
+          <p class="muted">
+            مقاله، ویدئو و پادکست رو از این قسمت ایجاد، ویرایش یا منتشر کن.
+          </p>
+
+          <div class="toolbar">
+
+            <input
+              id="content-search"
+              type="search"
+              placeholder="جست‌وجوی عنوان محتوا"
+            >
+
+            <select id="content-status-filter">
+              <option value="">همه وضعیت‌ها</option>
+              <option value="published">منتشرشده</option>
+              <option value="draft">پیش‌نویس</option>
+            </select>
+
+          </div>
+
+          <div class="content-tabs">
+
+            <button class="content-filter active" data-content-filter="all">
+              همه
+            </button>
+
+            <button class="content-filter" data-content-filter="article">
+              مقاله‌ها
+            </button>
+
+            <button class="content-filter" data-content-filter="video">
+              ویدئوها
+            </button>
+
+            <button class="content-filter" data-content-filter="podcast">
+              پادکست‌ها
+            </button>
+
+          </div>
+
           <div id="content-list" class="content-grid"></div>
+
         </article>
+
       </section>
 
+
+      <!-- ARTICLES -->
       <section id="page-articles" class="page-section" hidden>
-        <article class="panel-card"><div class="panel-heading"><div><span class="eyebrow">ARTICLES</span><h2>مقاله‌ها</h2></div><button class="primary-button" data-new-type="article">＋ مقاله جدید</button></div><div id="articles-list" class="content-grid"></div></article>
+
+        <article class="panel-card">
+
+          <div class="panel-heading">
+
+            <div>
+              <span class="eyebrow">ARTICLES</span>
+              <h2>مقاله‌ها</h2>
+            </div>
+
+            <button class="primary-button" data-new-type="article">
+              ＋ مقاله جدید
+            </button>
+
+          </div>
+
+          <div id="articles-list" class="content-grid"></div>
+
+        </article>
+
       </section>
 
+
+      <!-- VIDEOS -->
       <section id="page-videos" class="page-section" hidden>
-        <article class="panel-card"><div class="panel-heading"><div><span class="eyebrow">VIDEO LIBRARY</span><h2>ویدئوها</h2></div><button class="primary-button" data-new-type="video">＋ ویدئوی جدید</button></div><div id="videos-list" class="content-grid"></div></article>
+
+        <article class="panel-card">
+
+          <div class="panel-heading">
+
+            <div>
+              <span class="eyebrow">VIDEO LIBRARY</span>
+              <h2>ویدئوها</h2>
+            </div>
+
+            <button class="primary-button" data-new-type="video">
+              ＋ ویدئوی جدید
+            </button>
+
+          </div>
+
+          <div id="videos-list" class="content-grid"></div>
+
+        </article>
+
       </section>
 
+
+      <!-- PODCASTS -->
       <section id="page-podcasts" class="page-section" hidden>
-        <article class="panel-card"><div class="panel-heading"><div><span class="eyebrow">PODCAST STUDIO</span><h2>پادکست‌ها</h2></div><button class="primary-button" data-new-type="podcast">＋ پادکست جدید</button></div><div id="podcasts-list" class="content-grid"></div></article>
+
+        <article class="panel-card">
+
+          <div class="panel-heading">
+
+            <div>
+              <span class="eyebrow">PODCAST STUDIO</span>
+              <h2>پادکست‌ها</h2>
+            </div>
+
+            <button class="primary-button" data-new-type="podcast">
+              ＋ پادکست جدید
+            </button>
+
+          </div>
+
+          <div id="podcasts-list" class="content-grid"></div>
+
+        </article>
+
       </section>
 
+
+      <!-- MEDIA -->
       <section id="page-media" class="page-section" hidden>
+
         <article class="panel-card">
-          <div class="panel-heading"><div><span class="eyebrow">MEDIA LIBRARY</span><h2>کتابخانه رسانه</h2></div></div>
-          <p class="muted">تصاویر، فایل‌های صوتی و ویدئوهای آپلودشده در این قسمت نمایش داده می‌شن.</p>
+
+          <div class="panel-heading">
+
+            <div>
+              <span class="eyebrow">MEDIA LIBRARY</span>
+              <h2>کتابخانه رسانه</h2>
+            </div>
+
+          </div>
+
+          <p class="muted">
+            تصاویر، فایل‌های صوتی و ویدئوهای آپلودشده در این قسمت نمایش داده می‌شن.
+          </p>
+
           <form id="media-upload-form" class="upload-area">
-            <label for="media-file" class="upload-label"><span class="upload-icon">＋</span><strong>انتخاب فایل برای آپلود</strong><small>تصویر، صوت یا ویدئو، حداکثر ۱۵ مگابایت</small></label>
-            <input id="media-file" name="file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm,video/mp4,video/webm" required>
-            <button type="submit" class="primary-button">آپلود فایل</button>
+
+            <label for="media-file" class="upload-label">
+
+              <span class="upload-icon">＋</span>
+
+              <strong>انتخاب فایل برای آپلود</strong>
+
+              <small>
+                تصویر، صوت یا ویدئو، حداکثر ۱۵ مگابایت
+              </small>
+
+            </label>
+
+            <input
+              id="media-file"
+              name="file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm,video/mp4,video/webm"
+              required
+            >
+
+            <button type="submit" class="primary-button">
+              آپلود فایل
+            </button>
+
           </form>
+
           <div id="media-list" class="media-grid"></div>
+
         </article>
+
       </section>
 
+
+      <!-- SETTINGS -->
       <section id="page-settings" class="page-section" hidden>
+
         <article class="panel-card">
-          <div class="panel-heading"><div><span class="eyebrow">WEBSITE SETTINGS</span><h2>تنظیمات صفحه اصلی</h2></div></div>
-          <p class="muted">این فیلدها برای متن‌های قابل مدیریت صفحه اصلی در نظر گرفته شده‌اند.</p>
+
+          <div class="panel-heading">
+
+            <div>
+              <span class="eyebrow">WEBSITE SETTINGS</span>
+              <h2>تنظیمات صفحه اصلی</h2>
+            </div>
+
+          </div>
+
+          <p class="muted">
+            این فیلدها برای متن‌های قابل مدیریت صفحه اصلی در نظر گرفته شده‌اند.
+          </p>
+
           <form id="settings-form" class="form-grid">
-            <label>عنوان اصلی صفحه<input name="hero_title" maxlength="180" placeholder="مرکز مشاوره و آموزش زیوری"></label>
-            <label>متن معرفی کوتاه<input name="hero_subtitle" maxlength="500" placeholder="همراه شما در مسیر رشد و پیشرفت"></label>
-            <label>متن دکمه اصلی<input name="hero_button" maxlength="80" placeholder="درخواست مشاوره"></label>
-            <label>عنوان بخش درباره ما<input name="about_title" maxlength="180"></label>
-            <label class="full-width">متن درباره ما<textarea name="about_text" rows="5" maxlength="2000"></textarea></label>
-            <div class="form-actions"><button type="submit">ذخیره تنظیمات</button></div>
+
+            <label>
+              عنوان اصلی صفحه
+              <input
+                name="hero_title"
+                maxlength="180"
+                placeholder="مرکز مشاوره و آموزش زیوری"
+              >
+            </label>
+
+            <label>
+              متن معرفی کوتاه
+              <input
+                name="hero_subtitle"
+                maxlength="500"
+                placeholder="همراه شما در مسیر رشد و پیشرفت"
+              >
+            </label>
+
+            <label>
+              متن دکمه اصلی
+              <input
+                name="hero_button"
+                maxlength="80"
+                placeholder="درخواست مشاوره"
+              >
+            </label>
+
+            <label>
+              عنوان بخش درباره ما
+              <input name="about_title" maxlength="180">
+            </label>
+
+            <label class="full-width">
+              متن درباره ما
+              <textarea name="about_text" rows="5" maxlength="2000"></textarea>
+            </label>
+
+            <div class="form-actions">
+              <button type="submit">ذخیره تنظیمات</button>
+            </div>
+
           </form>
+
         </article>
+
       </section>
 
+
+      <!-- CONTENT EDITOR -->
       <section id="page-editor" class="page-section" hidden>
+
         <article class="panel-card">
-          <div class="panel-heading"><div><span class="eyebrow">CONTENT EDITOR</span><h2 id="editor-heading">افزودن محتوای جدید</h2></div><button id="cancel-editor" class="secondary-button">بازگشت</button></div>
+
+          <div class="panel-heading">
+
+            <div>
+              <span class="eyebrow">CONTENT EDITOR</span>
+              <h2 id="editor-heading">افزودن محتوای جدید</h2>
+            </div>
+
+            <button id="cancel-editor" class="secondary-button">
+              بازگشت
+            </button>
+
+          </div>
+
+
           <form id="content-form" class="form-grid">
+
             <input type="hidden" name="id">
-            <label>نوع محتوا<select name="type" id="content-type" required><option value="article">مقاله</option><option value="video">ویدئو</option><option value="podcast">پادکست</option></select></label>
-            <label>وضعیت انتشار<select name="status"><option value="draft">پیش‌نویس</option><option value="published">انتشار در سایت</option></select></label>
-            <label class="full-width">عنوان محتوا<input name="title" maxlength="180" required></label>
-            <label class="full-width">توضیح کوتاه<textarea name="summary" rows="3" maxlength="1000" placeholder="خلاصه‌ای کوتاه برای نمایش در کارت محتوا"></textarea></label>
-            <label>دسته‌بندی<input name="category" maxlength="100" placeholder="مثلاً مشاوره تحصیلی"></label>
-            <label>لینک تصویر کاور<input name="cover_url" maxlength="500" placeholder="/uploads/... یا لینک تصویر"></label>
-            <label class="full-width">متن مقاله<textarea name="body" rows="10" maxlength="30000" placeholder="متن کامل مقاله را اینجا بنویسید. برای ویدئو و پادکست می‌توانید این بخش را خالی بگذارید."></textarea></label>
-            <label class="full-width">آدرس فایل صوتی یا ویدئویی<input name="media_url" maxlength="500" placeholder="/uploads/filename.mp3 یا آدرس فایل"></label>
-            <label class="full-width">لینک خارجی (اختیاری)<input name="external_url" maxlength="1000" placeholder="https://..."></label>
-            <div class="form-actions"><button type="submit" id="save-content-button">ذخیره محتوا</button><button type="button" class="secondary-button" id="editor-cancel-bottom">انصراف</button></div>
+
+            <label>
+              نوع محتوا
+              <select name="type" id="content-type" required>
+                <option value="article">مقاله</option>
+                <option value="video">ویدئو</option>
+                <option value="podcast">پادکست</option>
+              </select>
+            </label>
+
+            <label>
+              وضعیت انتشار
+              <select name="status">
+                <option value="draft">پیش‌نویس</option>
+                <option value="published">انتشار در سایت</option>
+              </select>
+            </label>
+
+            <label class="full-width">
+              عنوان محتوا
+              <input name="title" maxlength="180" required>
+            </label>
+
+            <label class="full-width">
+              توضیح کوتاه
+              <textarea
+                name="summary"
+                rows="3"
+                maxlength="1000"
+                placeholder="خلاصه‌ای کوتاه برای نمایش در کارت محتوا"
+              ></textarea>
+            </label>
+
+            <label>
+              دسته‌بندی
+              <input
+                name="category"
+                maxlength="100"
+                placeholder="مثلاً مشاوره تحصیلی"
+              >
+            </label>
+
+            <label>
+              لینک تصویر کاور
+              <input
+                name="cover_url"
+                maxlength="500"
+                placeholder="/uploads/... یا لینک تصویر"
+              >
+            </label>
+
+            <label class="full-width">
+              متن مقاله
+              <textarea
+                name="body"
+                rows="10"
+                maxlength="30000"
+                placeholder="متن کامل مقاله را اینجا بنویسید. برای ویدئو و پادکست می‌توانید این بخش را خالی بگذارید."
+              ></textarea>
+            </label>
+
+            <label class="full-width">
+              آدرس فایل صوتی یا ویدئویی
+              <input
+                name="media_url"
+                maxlength="500"
+                placeholder="/uploads/filename.mp3 یا آدرس فایل"
+              >
+            </label>
+
+            <label class="full-width">
+              لینک خارجی (اختیاری)
+              <input
+                name="external_url"
+                maxlength="1000"
+                placeholder="https://..."
+              >
+            </label>
+
+            <div class="form-actions">
+
+              <button type="submit" id="save-content-button">
+                ذخیره محتوا
+              </button>
+
+              <button
+                type="button"
+                class="secondary-button"
+                id="editor-cancel-bottom"
+              >
+                انصراف
+              </button>
+
+            </div>
+
           </form>
+
         </article>
+
       </section>
+
     </main>
+
   </div>
 
+
+  <!-- REQUEST DETAILS -->
   <dialog id="request-dialog" class="details-dialog">
-    <form method="dialog" class="dialog-header"><h2>جزئیات درخواست</h2><button aria-label="بستن">×</button></form>
+
+    <form method="dialog" class="dialog-header">
+
+      <h2>جزئیات درخواست</h2>
+
+      <button aria-label="بستن">×</button>
+
+    </form>
+
     <div id="request-details" class="dialog-content"></div>
+
   </dialog>
 
-  <script src="/admin.js" defer></script>
+
+  <!-- JAVASCRIPT -->
+  <script src="/admin.js?v=20261126-2" defer></script>
+
 </body>
 </html>
